@@ -2,7 +2,7 @@ from dataclasses import dataclass
 import tomllib
 from pathlib import Path
 
-PATTERNS_FILE = Path('PythonGameofLife/patterns.toml')
+PATTERNS_FILE = Path('PythonGameofLife/Standard/patterns.toml')
 
 @dataclass
 class Pattern:
