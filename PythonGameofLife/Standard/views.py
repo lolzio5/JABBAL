@@ -28,4 +28,4 @@ class CursesView:
             current_grid.evolve()
             screen.addstr(0, 0, current_grid.as_string(self.bbox))
             screen.refresh()
-            sleep(1 / self.frame_rate)
+            sleep(1/self.frame_rate)

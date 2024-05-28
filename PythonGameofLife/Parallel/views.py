@@ -24,9 +24,9 @@ class CursesView:
             raise ValueError(
                 f"Error: terminal too small for pattern '{self.pattern.name}'"
             )
-
+        
         for _ in range(self.gen):
             asyncio.run(current_grid.evolve(self.bbox))
             screen.addstr(0, 0, current_grid.as_string(self.bbox))
             screen.refresh()
-            sleep(1 / self.frame_rate)
+            sleep(1/self.frame_rate)

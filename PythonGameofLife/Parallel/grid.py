@@ -20,7 +20,12 @@ class LifeGrid:
         for drow, dcol in neighbors:
             if (row+drow, col+dcol) in self.pattern.alive_cells:
                 alive_count=alive_count+1
-        return alive_count in [2, 3]
+        if alive_count in [2,3] and (row, col) in self.pattern.alive_cells:
+            return 1
+        elif alive_count==3 and (row, col) not in self.pattern.alive_cells:
+            return 1
+        else:
+            return 0
 
     async def evolve(self, bbox):
         start_col, start_row, end_col, end_row = bbox
