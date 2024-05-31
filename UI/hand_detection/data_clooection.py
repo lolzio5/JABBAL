@@ -4,13 +4,25 @@ import math
 import time
 from cvzone.HandTrackingModule import HandDetector
 
+
 offset = 20
 imageHeight = 480
-folder_path = r"JABBAL\UI\hand_detection\model_img\ok"
 counter = 0
+
+# folder_path = r"JABBAL\UI\hand_detection\model_img\draw"
+# folder_path = r"JABBAL\UI\hand_detection\model_img\fast"
+# folder_path = r"JABBAL\UI\hand_detection\model_img\ok"
+folder_path = r"JABBAL\UI\hand_detection\model_img\reset"
+# folder_path = r"JABBAL\UI\hand_detection\model_img\select"
+# folder_path = r"JABBAL\UI\hand_detection\model_img\start"
+# folder_path = r"JABBAL\UI\hand_detection\model_img\stop"
+
+
 
 cap = cv2.VideoCapture(1)
 detector = HandDetector(maxHands=1)
+
+
 while True:
     success, img = cap.read()
     if success:
@@ -44,7 +56,7 @@ while True:
 
                     wCenterGap = math.floor((imageHeight - newWidth)/2)
                     hCenterGap = math.floor((imageHeight - newHeight)/2)
-                    print("W: ",newWidth," H: ", newHeight, " imageHeight: ",imageHeight, " hCenterGap: ", hCenterGap, " wCenterGap: ", wCenterGap)
+                    # print("W: ",newWidth," H: ", newHeight, " imageHeight: ",imageHeight, " hCenterGap: ", hCenterGap, " wCenterGap: ", wCenterGap)
 
 
 
