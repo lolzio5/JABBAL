@@ -21,6 +21,7 @@ In addition to the .vcd file, a text file(word_stream.txt) will be generated wit
 
 **(2) Run the python code to generate an image from these pixel values.**  
 You need to have the pillow and numpy python libraries installed for this. 
+> Need to figure out why the images generated the by python and the image displayed via HDMI are different. (This is also the case in the jupiter notebook)  
 
 Expected output  
 ![Real deal](real_deal.png)  
