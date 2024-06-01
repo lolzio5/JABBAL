@@ -21,7 +21,9 @@ In addition to the .vcd file, a text file(word_stream.txt) will be generated wit
 
 **(2) Run the python code to generate an image from these pixel values.**  
 You need to have the pillow and numpy python libraries installed for this. 
-> Need to figure out why the images generated the by python and the image displayed via HDMI are different. (This is also the case in the jupiter notebook)  
+> Need to figure out why the images generated the by python and the image displayed via HDMI are different. (This is also the case in the jupiter notebook)
+
+**Wierd things happen when I disregard the user flag and switch b with g in the example verilog - I get the output displayed on the fpga!!! Does it use rbg instead of rgb?. Also the implemtation given here results in a lone irratic out of place pixel and the bottom left corner of the image**
 
 Expected output  
 ![Real deal](real_deal.png)  
