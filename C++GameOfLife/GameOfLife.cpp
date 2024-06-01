@@ -83,22 +83,55 @@ void initializeGrid(std::vector<std::vector<int> >& grid) {
     grid[12][11] = 1;
     grid[12][12] = 1;
 
+    grid[20][21] = 1;
+    grid[21][22] = 1;
+    grid[22][20] = 1;
+    grid[22][21] = 1;
+    grid[22][22] = 1;
+
+    grid[30][31] = 1;
+    grid[31][32] = 1;
+    grid[32][30] = 1;
+    grid[32][31] = 1;
+    grid[32][32] = 1;
+
 
 }
 
+bool isGridEmpty(const std::vector<std::vector<int> >& grid) {
+    for (const auto& row : grid) {
+        for (int cell : row) {
+            if (cell == 1) {
+                return false;
+            }
+        }
+    }
+    return true;
+}
+
 int main() {
-    const int WIDTH = 80;
-    const int HEIGHT = 40;
+    const int WIDTH = 190;
+    const int HEIGHT = 60;
 
     std::vector<std::vector<int> > grid(HEIGHT, std::vector<int>(WIDTH, 0));
 
     
     initializeGrid(grid);
 
+    auto start = std::chrono::high_resolution_clock::now(); 
+
     while (true) {
         clearScreen();
         printGrid(grid);
         updateGrid(grid);
+
+      if (isGridEmpty(grid)) {
+            auto end = std::chrono::high_resolution_clock::now();
+            std::chrono::duration<double> elapsed = end - start;
+            std::cout << "Grid became empty in " << elapsed.count() << " seconds." << std::endl;
+            break;
+        }
+
         //std::this_thread::sleep_for(std::chrono::milliseconds(200));
     }
 
