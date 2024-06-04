@@ -20,9 +20,9 @@ class LifeGrid:
         for drow, dcol in neighbors:
             if (row+drow, col+dcol) in self.pattern.alive_cells:
                 alive_count=alive_count+1
-        if alive_count in [2,3] and (row, col) in self.pattern.alive_cells:
+        if ((alive_count == 2) and ((row, col) in self.pattern.alive_cells)):
             return 1
-        elif alive_count==3 and (row, col) not in self.pattern.alive_cells:
+        elif alive_count==3:
             return 1
         else:
             return 0
