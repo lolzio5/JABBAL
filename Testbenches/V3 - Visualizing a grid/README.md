@@ -1,5 +1,5 @@
-## Description of the files I"ve uploaded
-Blue square generates... a blue ( more of teal like colour tbh ) squre.  I used this and mixed up the colors + made simple patterns to try and understand how pixels are assinged RGB values.  
+## Description of the files I've uploaded
+Blue square generates... a blue ( more of teal like colour tbh ) square.  I used this and mixed up the colors + made simple patterns to try and understand how pixels are assinged RGB values.  
 The two grid files take an array stored in rom and use a modified pixel streamer module to visualise the array as a grid of ones and zeros. V1 is a simple grid (4x3) and v2 is a much larger grid (80x60).
 ## How to use it
 To get the blue use the same commands ran in for the testbench that visualises the example.
