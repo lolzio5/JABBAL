@@ -8,6 +8,7 @@ from cvzone.ClassificationModule import Classifier
 offset = 20
 imageHeight = 480
 counter = 0
+draw_state = True
 
 # folder_path = r"JABBAL\UI\hand_detection\model_img\draw"
 # folder_path = r"JABBAL\UI\hand_detection\model_img\fast"
@@ -21,14 +22,14 @@ counter = 0
 
 cap = cv2.VideoCapture(1)
 detector = HandDetector(maxHands=1)
-classifier = Classifier(r"JABBAL\UI\hand_detection\model_keras\keras_model.h5", r"JABBAL\UI\hand_detection\model_keras\labels.txt")
+classifier = Classifier(r"UI\hand_detection\model_keras\keras_model.h5", r"UI\hand_detection\model_keras\labels.txt")
 label = ["draw","fast","ok","reset","select","start","stop"]
 
 while True:
     success, img = cap.read()
     if success:
         #img = cv2.flip(img, 1)
-        hands, img = detector.findHands(img)
+        hands, img = detector.findHands(img, draw=True, flipType=True)
         whiteImage = np.ones((imageHeight, imageHeight, 3), np.uint8)*255
 
 
@@ -36,6 +37,7 @@ while True:
 
         if hands:
                 hand = hands[0]
+                lmHand = hand["lmList"]
                 x, y, w, h = hand['bbox']
                 imgCrop = img[y-offset:y+h+offset,x-offset:x+w+offset] #no boundary protection
                 # cv2.imshow("ImageCropped", imgCrop)
@@ -67,12 +69,23 @@ while True:
                         whiteImage[hCenterGap:imgResize.shape[0]+hCenterGap, 0:imgResize.shape[1]] = imgResize
 
                 cv2.imshow(("White Image"), whiteImage)
-                prediction, index = classifier.getPrediction(whiteImage)
-                print(label[index], prediction)
+                # prediction, index = classifier.getPrediction(whiteImage)
+                # print(label[index], lmHand)
+                length, info, img = detector.findDistance(lmHand[4][0:2], lmHand[8][0:2], img, color=(255, 0, 255), scale=10)
+                                                  
+                
+                if w//length > 6: 
+                    draw_state = True
+                    print("coordinate: ",lmHand[4][0:2]," input status: pen down ", w//length, " drawing?", "True")
+                else:
+                    draw_state = False
+                    print("coordinate: ",lmHand[4][0:2]," input status: hovering ", w//length, " drawing?", "False")
+                
+
         cv2.imshow(("Image"), img)
     else:
         print("fail to get frame")
-    # key = cv2.waitKey(2)
+    key = cv2.waitKey(2)
 
     # if key == ord("s"):
     #     print(cv2.imwrite(f'{folder_path}/Image_{time.time()}.jpg', whiteImage))
