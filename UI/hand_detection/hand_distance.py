@@ -4,11 +4,13 @@ import math
 from cvzone.HandTrackingModule import HandDetector
 from cvzone.ClassificationModule import Classifier
 import socket
+import time
 
 offset = 20
 imageHeight = 480
 counter = 0
 drawing = True
+start=time.time()
 
 # Initialize TCP server
 server_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
@@ -103,18 +105,19 @@ while True:
                 cv2.imshow(("White Image"), whiteImage)
                 # prediction, index = classifier.getPrediction(whiteImage)
                 # print(label[index], lmHand)
-                
-                if is_thumbs_up(lmHand):
+                exec_time=time.time()-start
+                if is_thumbs_up(lmHand) and exec_time>45:
                     drawing = False
                     message = "Thumbs up detected! Drawing disabled."
                     client_socket.send(message.encode())
 
                 if drawing:
                     length, info, img = detector.findDistance(lmHand[4][0:2], lmHand[8][0:2], img, color=(255, 0, 255), scale=10)
-                    if w // length > 6:
-                        #print("coordinate: ", lmHand[4][0:2], " input status: pen down ", w // length, " drawing?", "True")
-                        message=f"Coordinate: {lmHand[4][0:2]}"
-                        client_socket.send(message.encode())
+                    if length != 0:
+                        if w // length > 6:
+                            #print("coordinate: ", lmHand[4][0:2], " input status: pen down ", w // length, " drawing?", "True")
+                            message=f"Coordinate: {lmHand[4][0:2]}"
+                            client_socket.send(message.encode())
                     #else:
                         #print("coordinate: ", lmHand[4][0:2], " input status: hovering ", w // length, " drawing?", "False")
                 else:

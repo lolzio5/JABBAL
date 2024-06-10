@@ -4,8 +4,8 @@ from concurrent.futures import ThreadPoolExecutor
 from itertools import product
 import math
 
-WIDTH = 1200
-HEIGHT = 1920
+WIDTH = 20
+HEIGHT = 20
 NUM_THREADS = os.cpu_count()
 print(NUM_THREADS)
 grid_empty = False
