@@ -289,9 +289,11 @@ wire valid_int = 1'b1;
 wire [4:0] current_reg;
 wire state;
 
+wire [4:0] inverted_x_index;
+assign inverted_x_index = 5'd31 - x_index;
 // assign current_reg = regfile[y_index];
 // assign state = current_reg[x_index];
-assign state = regfile[y_index][x_index];
+assign state = regfile[y_index][inverted_x_index];
 
 // reg [7:0] r, g, b;
 
