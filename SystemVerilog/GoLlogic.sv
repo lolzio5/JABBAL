@@ -1,9 +1,9 @@
 module GameOfLife #(parameter WIDTH = 640, HEIGHT = 480, NUM_THREADS = 4) ( //NUM_THREADS should be set to appropriate value
     input logic clk,
     input logic reset,
-    input logic [HEIGHT-1:0][WIDTH-1:0] current_grid,
-    output logic [HEIGHT-1:0][WIDTH-1:0] next_grid
+    input logic get_next
 );
+    function generate_next_state()
 
     // Function to count live neighbors
     function int count_live_neighbors(input logic [HEIGHT-1:0][WIDTH-1:0] grid, input int x, y);
