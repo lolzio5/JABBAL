@@ -5,12 +5,14 @@ from cvzone.HandTrackingModule import HandDetector
 from cvzone.ClassificationModule import Classifier
 import socket
 import time
+import pickle
 
 offset = 20
 imageHeight = 480
 counter = 0
 drawing = True
 start=time.time()
+done_sending=0
 
 # Initialize TCP server
 server_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
@@ -20,12 +22,12 @@ print("Waiting for a connection...")
 client_socket, client_address = server_socket.accept()
 print(f"Connected to {client_address}")
 
-
-
 cap = cv2.VideoCapture(0)
 detector = HandDetector(maxHands=1)
 #classifier = Classifier(r"UI\hand_detection\model_keras\keras_model.h5", r"UI\hand_detection\model_keras\labels.txt")
 label = ["draw","fast","ok","reset","select","start","stop"]
+coordinates=set()
+matrix=np.zeros((1920,1080), dtype=np.bool_)
 
 def is_thumbs_up(hand):
     thumb_tip = hand[4][1]  # y-coordinate of thumb tip
@@ -106,24 +108,29 @@ while True:
                 # prediction, index = classifier.getPrediction(whiteImage)
                 # print(label[index], lmHand)
                 exec_time=time.time()-start
-                if is_thumbs_up(lmHand) and exec_time>45:
+                if is_thumbs_up(lmHand) and exec_time>10:
                     drawing = False
-                    message = "Thumbs up detected! Drawing disabled."
-                    client_socket.send(message.encode())
+                    if not done_sending:
+                        for alive in coordinates:
+                            matrix[int(alive[0])*3][int(alive[1]*2.25)]=True
+                        try:
+                            serialized_matrix = pickle.dumps(matrix)
+                            client_socket.sendall(serialized_matrix)
+                            print("Starting grid sent!")
+                            done_sending=1
+                        except Exception as e:
+                            print(f"Error sending matrix: {e}")
 
                 if drawing:
                     length, info, img = detector.findDistance(lmHand[4][0:2], lmHand[8][0:2], img, color=(255, 0, 255), scale=10)
                     if length != 0:
                         if w // length > 6:
-                            #print("coordinate: ", lmHand[4][0:2], " input status: pen down ", w // length, " drawing?", "True")
-                            message=f"Coordinate: {lmHand[4][0:2]}"
-                            client_socket.send(message.encode())
-                    #else:
-                        #print("coordinate: ", lmHand[4][0:2], " input status: hovering ", w // length, " drawing?", "False")
+                            coordinates.add((lmHand[4][0:2][0], lmHand[4][0:2][1]))
                 else:
                     if is_hand_open(lmHand):
-                        message="Hand is open, drawing is paused"
-                        client_socket.send(message.encode())
+                        message="P" # Pause
+                        pickled_message=pickle.dumps(message)
+                        client_socket.send(pickled_message)
 
         cv2.imshow(("Image"), img)
     else:
