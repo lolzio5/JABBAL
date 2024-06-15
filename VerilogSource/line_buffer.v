@@ -1,16 +1,16 @@
 module line_buffer(
-input clk,
-input [9:0] calc_row, // 720 rows - need 10 bits
+    input clk,
+    input [9:0] calc_row, // 720 rows - need 10 bits
 
-// Fetching stuff
-output [9:0] fetch_addr,
-input [1279:0] fetch_mem,
+    // Fetching stuff
+    output [9:0] fetch_addr,
+    input [1279:0] fetch_mem,
 
-// Buffers
-output [1279:0] top,
-output [1279:0] middle,
-output [1279:0] bottom,
-output valid
+    // Buffers
+    output [1279:0] top,
+    output [1279:0] middle,
+    output [1279:0] bottom,
+    output valid
 );
 
 reg [1279:0] line_1;
@@ -30,13 +30,12 @@ reg valid_reg;
 always (@posedge clk) begin
     // Special case - first line
     if (calc_row == 0) begin
-        if (temp_fetch_counter = 2'd0)) begin
+        if (temp_fetch_counter = 2'd0) begin
             line_1 <= 1280'd0;
             fetch_addr <= calc_row;
 
             valid_reg <= 0;
             temp_fetch_counter <= 2'd1;
-            
         end
         if (temp_fetch_counter <= 2'd1) begin
             line_2 <= fetch_mem;
