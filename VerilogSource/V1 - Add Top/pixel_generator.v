@@ -21,40 +21,40 @@
 
 
 module pixel_generator(
-input           out_stream_aclk,
-input           s_axi_lite_aclk,
-input           axi_resetn,
-input           periph_resetn,
+    input           out_stream_aclk,
+    input           s_axi_lite_aclk,
+    input           axi_resetn,
+    input           periph_resetn,
 
-//Stream output
-output [31:0]   out_stream_tdata,
-output [3:0]    out_stream_tkeep,
-output          out_stream_tlast,
-input           out_stream_tready,
-output          out_stream_tvalid,
-output [0:0]    out_stream_tuser, 
+    //Stream output
+    output [31:0]   out_stream_tdata,
+    output [3:0]    out_stream_tkeep,
+    output          out_stream_tlast,
+    input           out_stream_tready,
+    output          out_stream_tvalid,
+    output [0:0]    out_stream_tuser, 
 
-//AXI-Lite S
-input [AXI_LITE_ADDR_WIDTH-1:0]     s_axi_lite_araddr,
-output          s_axi_lite_arready,
-input           s_axi_lite_arvalid,
+    //AXI-Lite S
+    input [AXI_LITE_ADDR_WIDTH-1:0]     s_axi_lite_araddr,
+    output          s_axi_lite_arready,
+    input           s_axi_lite_arvalid,
 
-input [AXI_LITE_ADDR_WIDTH-1:0]     s_axi_lite_awaddr,
-output          s_axi_lite_awready,
-input           s_axi_lite_awvalid,
+    input [AXI_LITE_ADDR_WIDTH-1:0]     s_axi_lite_awaddr,
+    output          s_axi_lite_awready,
+    input           s_axi_lite_awvalid,
 
-input           s_axi_lite_bready,
-output [1:0]    s_axi_lite_bresp,
-output          s_axi_lite_bvalid,
+    input           s_axi_lite_bready,
+    output [1:0]    s_axi_lite_bresp,
+    output          s_axi_lite_bvalid,
 
-output [31:0]   s_axi_lite_rdata,
-input           s_axi_lite_rready,
-output [1:0]    s_axi_lite_rresp,
-output          s_axi_lite_rvalid,
+    output [31:0]   s_axi_lite_rdata,
+    input           s_axi_lite_rready,
+    output [1:0]    s_axi_lite_rresp,
+    output          s_axi_lite_rvalid,
 
-input  [31:0]   s_axi_lite_wdata,
-output          s_axi_lite_wready,
-input           s_axi_lite_wvalid
+    input  [31:0]   s_axi_lite_wdata,
+    output          s_axi_lite_wready,
+    input           s_axi_lite_wvalid
 
 );
 
