@@ -58,8 +58,8 @@ input           s_axi_lite_wvalid
 
 );
 
-localparam X_SIZE = 640;
-localparam Y_SIZE = 480;
+localparam X_SIZE = 1280;
+localparam Y_SIZE = 720;
 parameter  REG_FILE_SIZE = 3;
 localparam REG_FILE_AWIDTH = $clog2(REG_FILE_SIZE);
 parameter  AXI_LITE_ADDR_WIDTH = 8;
@@ -196,32 +196,32 @@ localparam IDLE = 2'b00, WRITE_1 = 2'b01, WRITE_2 = 2'b10;
 
 // Initialises the grid when read_flag is set to high, when data is to be retrieved from the registers and stored in BRAM.
 
-reg [10:0] row_index;
-reg [1:0] state;
+reg [9:0] row_index;
+reg [1:0] init_state;
 reg done;
 
 always @(posedge s_axi_lite_aclk or posedge axi_resetn) begin
     if (axi_resetn) begin
-        state <= IDLE;
+        init_state <= IDLE;
         row_index_1<=0;
         row_index_2<=1;
         done<=0;
     end else begin
-        case (state)
+        case (init_state)
             IDLE: begin
                 if (done==1) begin
-                    state<=IDLE;
+                    init_state<=IDLE;
                 end else if ((read_flag==1) && (done==0)) begin
-                    state <= WRITE_1;
+                    init_state <= WRITE_1;
                 end else if ((read_flag==0) && (done==0)) begin
-                    state <= WRITE_2;
+                    init_state <= WRITE_2;
                 end
             end
             WRITE_1: begin
                 matrix[row_index] <= regfile[0]; // Write to the appropriate location in BRAM
                 if (read_flag == 1) begin
                     row_index_1<=row_index_1+1
-                    state <= WRITE_2;
+                    init_state <= WRITE_2;
                 end
                 if (row_index_1=719) begin
                     done<=1
@@ -231,7 +231,7 @@ always @(posedge s_axi_lite_aclk or posedge axi_resetn) begin
                 matrix[row_index] <= regfile[0]; // Write to the appropriate location in BRAM
                 if (read_flag == 0) begin
                     row_index_2<=row_index_2+1
-                    state <=WRITE_1;
+                    init_state <=WRITE_1;
                 end
                 if (row_index_2=719) begin
                     done<=1
@@ -241,11 +241,51 @@ always @(posedge s_axi_lite_aclk or posedge axi_resetn) begin
     end
 end
 
+always @(posedge s_axi_lite_aclk or posedge axi_resetn) begin
+
+end
+
 assign s_axi_lite_awready = (writeState == AWAIT_WADD_AND_DATA || writeState == AWAIT_WADD);
 assign s_axi_lite_wready = (writeState == AWAIT_WADD_AND_DATA || writeState == AWAIT_WDATA);
 assign s_axi_lite_bvalid = (writeState == AWAIT_RESP);
 assign s_axi_lite_bresp = (writeAddr < REG_FILE_SIZE) ? AXI_OK : AXI_ERR;
 
+wire [9:0] row_addr;
+wire [10:0] bit_index;
+wire addr_valid, bit_valid;
+reg [1279:0] ram_data_out;
+wire state;
+
+always @(posedge out_stream_aclk or posedge axi_resetn ) begin
+    if (pause_flag || axi_resetn) begin
+        address_generator addr_gen (
+            .clk(out_stream_aclk),
+            .reset(axi_resetn),
+            .row_addr(row_addr),
+            .valid(addr_valid)
+        );
+
+        ram_data_out = ram[row_addr]; // Get the whole row
+
+        bit_extractor bit_ext_inst (
+            .clk(out_stream_aclk),
+            .reset(axi_resetn),
+            .row_data(ram_data_out),
+            .bit_out(bit_out),
+            .bit_index(bit_index),
+            .valid(bit_valid)
+        );
+
+        state = ram_data_out[bit_index]
+    end
+end
+
+wire valid_int = 1'b1;
+wire [4:0] current_reg;
+wire state;
+
+wire [4:0] inverted_x_index;
+assign inverted_x_index = 5'd31 - x_index;
 
 assign r = state * 8'hCB;
 assign g = state * 8'h41;
@@ -258,5 +298,4 @@ packer pixel_packer(    .aclk(out_stream_aclk),
                         .out_stream_tdata(out_stream_tdata), .out_stream_tkeep(out_stream_tkeep),
                         .out_stream_tlast(out_stream_tlast), .out_stream_tready(out_stream_tready),
                         .out_stream_tvalid(out_stream_tvalid), .out_stream_tuser(out_stream_tuser) );
-
 endmodule

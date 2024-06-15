@@ -27,7 +27,7 @@ detector = HandDetector(maxHands=1)
 #classifier = Classifier(r"UI\hand_detection\model_keras\keras_model.h5", r"UI\hand_detection\model_keras\labels.txt")
 label = ["draw","fast","ok","reset","select","start","stop"]
 coordinates=set()
-matrix=np.zeros((1920,1080), dtype=np.bool_)
+matrix=np.zeros((1280,720), dtype=np.bool_)
 
 def is_thumbs_up(hand):
     thumb_tip = hand[4][1]  # y-coordinate of thumb tip
@@ -112,7 +112,7 @@ while True:
                     drawing = False
                     if not done_sending:
                         for alive in coordinates:
-                            matrix[int(alive[0])*3][int(alive[1]*2.25)]=True
+                            matrix[int(alive[0])*2][int(alive[1]*1.5)]=True
                         try:
                             serialized_matrix = pickle.dumps(matrix)
                             client_socket.sendall(serialized_matrix)
