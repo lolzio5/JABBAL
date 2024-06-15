@@ -339,7 +339,7 @@ always @(posedge out_stream_aclk and pause_flag) begin
         top_line <= dout_line_B;
     end
 
-    if(y==719) begin
+    if((y==719) && (pause_flag==0)) begin
         current_ram_flag=!current_ram_flag;
     end
 
