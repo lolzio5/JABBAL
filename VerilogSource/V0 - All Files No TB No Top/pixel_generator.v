@@ -256,7 +256,7 @@ wire addr_valid, bit_valid;
 reg [1279:0] ram_data_out;
 wire state;
 
-always @(posedge out_stream_aclk or posedge axi_resetn ) begin
+always @(posedge out_stream_aclk or posedge axi_resetn) begin
     if (pause_flag || axi_resetn) begin
         address_generator addr_gen (
             .clk(out_stream_aclk),

@@ -1,7 +1,7 @@
 from PIL import Image
 
 # Load the image
-image_path = r'C:\summer_project2024\JABBAL\Testbenches\Updated project\V3.1 - Block Ram Read test\cover.png'
+image_path = r'C:\summer_project2024\JABBAL\Testbenches\Updated project\V3.1 - Block Ram Read test\cover2.png'
 img = Image.open(image_path)
 
 # Convert to grayscale
@@ -18,9 +18,9 @@ pixels = list(bw_img.getdata())
 width, height = bw_img.size
 
 # Open the COE file to write
-with open(r"C:\summer_project2024\JABBAL\Testbenches\Updated project\V3.1 - Block Ram Read test\cover.coe", "w") as f:
+with open(r"C:\summer_project2024\JABBAL\Testbenches\Updated project\V3.1 - Block Ram Read test\cover2.coe", "w") as f:
     # Write the radix
-    f.write("; This is a COE file for initializing a 1920 x 1080 BRAM\n")
+    f.write("; This is a COE file for initializing a 1280 x 720 BRAM\n")
     f.write("memory_initialization_radix = 2;\n")
     f.write("memory_initialization_vector =\n")
 
