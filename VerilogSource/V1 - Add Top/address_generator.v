@@ -5,10 +5,9 @@ module address_generator (
 
     );
 
-    always @(posedge clk) begin
+    always @(posedge clk or posedge reset) begin
         if (reset) begin
             row_addr <= 0;
-
         end else begin
             if (row_addr < 720) begin
                 row_addr <= row_addr + 1;
