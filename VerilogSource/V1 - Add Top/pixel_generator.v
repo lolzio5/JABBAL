@@ -184,7 +184,6 @@ always @(posedge s_axi_lite_aclk) begin
     endcase
 end
 
-
 // Pause flag, which controls to the calculation of the next grid
 assign pause_flag = regfile[2]
 
@@ -206,6 +205,7 @@ always @(posedge s_axi_lite_aclk or posedge axi_resetn) begin
         row_index_1<=0;
         row_index_2<=1;
         done<=0;
+        current_ram_flag=0;
     end else begin
         case (init_state)
             IDLE: begin
@@ -218,7 +218,7 @@ always @(posedge s_axi_lite_aclk or posedge axi_resetn) begin
                 end
             end
             WRITE_1: begin
-                matrix[row_index] <= regfile[0]; // Write to the appropriate location in BRAM
+                results_line <= regfile[0]; // Write to the appropriate location in BRAM
                 if (read_flag == 1) begin
                     row_index_1<=row_index_1+1
                     init_state <= WRITE_2;
@@ -228,7 +228,7 @@ always @(posedge s_axi_lite_aclk or posedge axi_resetn) begin
                 end
             end
             WRITE_2: begin
-                matrix[row_index] <= regfile[0]; // Write to the appropriate location in BRAM
+                results_line <= regfile[0]; // Write to the appropriate location in BRAM
                 if (read_flag == 0) begin
                     row_index_2<=row_index_2+1
                     init_state <=WRITE_1;
@@ -241,14 +241,37 @@ always @(posedge s_axi_lite_aclk or posedge axi_resetn) begin
     end
 end
 
-always @(posedge s_axi_lite_aclk or posedge axi_resetn) begin
-
-end
-
 assign s_axi_lite_awready = (writeState == AWAIT_WADD_AND_DATA || writeState == AWAIT_WADD);
 assign s_axi_lite_wready = (writeState == AWAIT_WADD_AND_DATA || writeState == AWAIT_WDATA);
 assign s_axi_lite_bvalid = (writeState == AWAIT_RESP);
 assign s_axi_lite_bresp = (writeAddr < REG_FILE_SIZE) ? AXI_OK : AXI_ERR;
+
+
+wire [9:0] fetch_addr;
+wire [9:0] calc_row;
+wire [1279:0] fetch_mem;
+wire [1279:0] top;
+wire [1279:0] middle;
+wire [1279:0] bottom;
+wire valid;
+
+always @(posedge out_stream_aclk and pause==0) begin
+    if(current_ram_flag==0) begin
+        results_line<=fetch_addr
+        
+    end
+end
+
+line_buffer buffer(
+                 .calc_row(calc_row),
+                 .clk(out_stream_aclk),
+                 .fetch_addr(fetch_addr),
+                 .fetch_mem(fetch_mem),
+                 .top(top),
+                 .middle(middle),
+                 .bottom(bottom),
+                 .valid(valid)
+);
 
 wire [9:0] row_addr;
 wire [10:0] bit_index;
@@ -280,12 +303,63 @@ always @(posedge out_stream_aclk or posedge axi_resetn) begin
     end
 end
 
+//BRAM register
+reg [1279:0]    top_line;
+reg [1279:0]    results_line;
+reg             write;
+
+assign c = 1'b0;
+
+reg [X_WIDTH-1:0] x;
+reg [Y_WIDTH-1:0] y;
+
+wire first = (x == 0) & (y==0);
+wire lastx = (x == X_SIZE - 1);
+wire lasty = (y == Y_SIZE - 1);
+
+wire ready;
+
+always @(posedge out_stream_aclk and pause_flag) begin
+    if(current_ram_flag) begin
+        top_line <= dout_line_A;
+    end else begin
+        top_line <= dout_line_B;
+    end
+
+    write <= 1'b0;
+
+    if(periph_resetn) begin
+        if(ready) begin
+            if(lastx) begin
+                x <= 11'd0;
+                if(lasty) begin
+                    y <= 10'd0;
+                end else begin
+                    y <= y + 1'b1;
+                end
+            end else begin
+                x <= x + 1'b1; 
+            end
+
+        end
+    end else begin
+        x <= 11'd0;
+        y <= 10'd0;
+    end
+
+end
+
 wire valid_int = 1'b1;
 wire [4:0] current_reg;
 wire state;
 
-wire [4:0] inverted_x_index;
-assign inverted_x_index = 5'd31 - x_index;
+wire [10:0] inverted_x;
+
+assign inverted_x = 11'd1279 - x;
+assign state = top_line[inverted_x];
+
+wire [1279:0] dout_line_A;
+wire [1279:0] dout_line_B;
 
 assign r = state * 8'hCB;
 assign g = state * 8'h41;
@@ -298,4 +372,19 @@ packer pixel_packer(    .aclk(out_stream_aclk),
                         .out_stream_tdata(out_stream_tdata), .out_stream_tkeep(out_stream_tkeep),
                         .out_stream_tlast(out_stream_tlast), .out_stream_tready(out_stream_tready),
                         .out_stream_tvalid(out_stream_tvalid), .out_stream_tuser(out_stream_tuser) );
+blk_mem_gen_0 blk_ram_A(
+                 .addra(y),
+                 .clka(out_stream_aclk),
+                 .dina(results_line),
+                 .douta(dout_line_A),
+                 .ena(1),
+                 .wea(write));
+                 
+blk_mem_gen_1 blk_ram_B(
+                 .addra(y),
+                 .clka(out_stream_aclk),
+                 .dina(results_line),
+                 .douta(dout_line_B),
+                 .ena(1),
+                 .wea(write));
 endmodule
