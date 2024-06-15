@@ -257,7 +257,7 @@ wire valid;
 
 always @(posedge out_stream_aclk and pause==0) begin
     if(current_ram_flag==0) begin
-        results_line<=fetch_addr
+      
         
     end
 end
@@ -373,10 +373,10 @@ packer pixel_packer(    .aclk(out_stream_aclk),
                         .out_stream_tlast(out_stream_tlast), .out_stream_tready(out_stream_tready),
                         .out_stream_tvalid(out_stream_tvalid), .out_stream_tuser(out_stream_tuser) );
 blk_mem_gen_0 blk_ram_A(
-                 .addra(y),
+                 .addra(fetch_addr),
                  .clka(out_stream_aclk),
                  .dina(results_line),
-                 .douta(dout_line_A),
+                 .douta(fetch_mem),
                  .ena(1),
                  .wea(write));
                  
