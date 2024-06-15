@@ -1,7 +1,7 @@
 
 //////////////////////////////////////////////////////////////////////////////////
-// Company: 
-// Engineer: 
+// Company: JABBAL
+// Engineers: Bon, Lolézio, Ajay
 // 
 // Create Date: 16.05.2024 22:03:08
 // Design Name: 
@@ -15,7 +15,7 @@
 // 
 // Revision:
 // Revision 0.01 - File Created
-// Additional Comments:
+// Additional Comments: please work we beg
 // 
 //////////////////////////////////////////////////////////////////////////////////
 
@@ -57,6 +57,10 @@ module pixel_generator(
     input           s_axi_lite_wvalid
 
 );
+
+// -------------------------------------------------------
+// ---------------- FROM ED ------------------------------
+// -------------------------------------------------------
 
 localparam X_SIZE = 1280;
 localparam Y_SIZE = 720;
@@ -123,6 +127,11 @@ assign s_axi_lite_rresp = (readAddr < REG_FILE_SIZE) ? AXI_OK : AXI_ERR;
 assign s_axi_lite_rvalid = (readState == AWAIT_READ);
 assign s_axi_lite_rdata = readData;
 
+assign s_axi_lite_awready = (writeState == AWAIT_WADD_AND_DATA || writeState == AWAIT_WADD);
+assign s_axi_lite_wready = (writeState == AWAIT_WADD_AND_DATA || writeState == AWAIT_WDATA);
+assign s_axi_lite_bvalid = (writeState == AWAIT_RESP);
+assign s_axi_lite_bresp = (writeAddr < REG_FILE_SIZE) ? AXI_OK : AXI_ERR;
+
 //Write to the register file, use a state machine to track address write, data write and response read events
 always @(posedge s_axi_lite_aclk) begin
 
@@ -184,6 +193,16 @@ always @(posedge s_axi_lite_aclk) begin
     endcase
 end
 
+// -------------------------------------------------------
+// ---------------- OUR CODE -----------------------------
+// -------------------------------------------------------
+
+
+
+// -------------------------------------------------------
+// ---------------- GRID INITIALISATION ------------------
+// -------------------------------------------------------
+
 // Pause flag, which controls to the calculation of the next grid
 assign pause_flag = regfile[2]
 
@@ -194,7 +213,6 @@ assign read_flag = regfile[1]
 localparam IDLE = 2'b00, WRITE_1 = 2'b01, WRITE_2 = 2'b10;
 
 // Initialises the grid when read_flag is set to high, when data is to be retrieved from the registers and stored in BRAM.
-
 reg [9:0] row_index;
 reg [1:0] init_state;
 reg done;
@@ -241,12 +259,9 @@ always @(posedge s_axi_lite_aclk or posedge axi_resetn) begin
     end
 end
 
-assign s_axi_lite_awready = (writeState == AWAIT_WADD_AND_DATA || writeState == AWAIT_WADD);
-assign s_axi_lite_wready = (writeState == AWAIT_WADD_AND_DATA || writeState == AWAIT_WDATA);
-assign s_axi_lite_bvalid = (writeState == AWAIT_RESP);
-assign s_axi_lite_bresp = (writeAddr < REG_FILE_SIZE) ? AXI_OK : AXI_ERR;
-
-
+// -------------------------------------------------------
+// ---------------- NEXT STATE CALCULATION ---------------
+// -------------------------------------------------------
 wire [9:0] fetch_addr;
 wire [9:0] calc_row;
 wire [1279:0] fetch_mem;
@@ -255,11 +270,34 @@ wire [1279:0] middle;
 wire [1279:0] bottom;
 wire valid;
 
-always @(posedge out_stream_aclk and pause==0) begin
-    if(current_ram_flag==0) begin
-      
-        
+always @(posedge out_stream_aclk and pause_flag==0) begin
+    if(current_ram_flag) begin
+         <= dout_line_A;
+    end else begin
+        top_line <= dout_line_B;
     end
+
+    write <= 1'b0;
+
+    if(periph_resetn) begin
+        if(ready) begin
+            if(lastx) begin
+                x <= 11'd0;
+                if(lasty) begin
+                    y <= 10'd0;
+                end else begin
+                    y <= y + 1'b1;
+                end
+            end else begin
+                x <= x + 1'b1; 
+            end
+
+        end
+    end else begin
+        x <= 11'd0;
+        y <= 10'd0;
+    end
+
 end
 
 line_buffer buffer(
@@ -273,35 +311,10 @@ line_buffer buffer(
                  .valid(valid)
 );
 
-wire [9:0] row_addr;
-wire [10:0] bit_index;
-wire addr_valid, bit_valid;
-reg [1279:0] ram_data_out;
-wire state;
 
-always @(posedge out_stream_aclk or posedge axi_resetn) begin
-    if (pause_flag || axi_resetn) begin
-        address_generator addr_gen (
-            .clk(out_stream_aclk),
-            .reset(axi_resetn),
-            .row_addr(row_addr),
-            .valid(addr_valid)
-        );
-
-        ram_data_out = ram[row_addr]; // Get the whole row
-
-        bit_extractor bit_ext_inst (
-            .clk(out_stream_aclk),
-            .reset(axi_resetn),
-            .row_data(ram_data_out),
-            .bit_out(bit_out),
-            .bit_index(bit_index),
-            .valid(bit_valid)
-        );
-
-        state = ram_data_out[bit_index]
-    end
-end
+// -------------------------------------------------------
+// ---------------- OUTPUT LOGIC -------------------------
+// -------------------------------------------------------
 
 //BRAM register
 reg [1279:0]    top_line;
@@ -324,6 +337,10 @@ always @(posedge out_stream_aclk and pause_flag) begin
         top_line <= dout_line_A;
     end else begin
         top_line <= dout_line_B;
+    end
+
+    if(y==719) begin
+        current_ram_flag=!current_ram_flag;
     end
 
     write <= 1'b0;
@@ -373,7 +390,7 @@ packer pixel_packer(    .aclk(out_stream_aclk),
                         .out_stream_tlast(out_stream_tlast), .out_stream_tready(out_stream_tready),
                         .out_stream_tvalid(out_stream_tvalid), .out_stream_tuser(out_stream_tuser) );
 blk_mem_gen_0 blk_ram_A(
-                 .addra(fetch_addr),
+                 .addra(y),
                  .clka(out_stream_aclk),
                  .dina(results_line),
                  .douta(fetch_mem),
