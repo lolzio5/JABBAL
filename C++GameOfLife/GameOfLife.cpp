@@ -5,7 +5,8 @@
 
 
 void clearScreen() {
-    system("clear");
+    //system("clear");
+    system("cls");
 
 }
 
