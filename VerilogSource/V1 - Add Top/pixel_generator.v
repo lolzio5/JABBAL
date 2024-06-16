@@ -203,12 +203,12 @@ end
 // -------------------------------------------------------
 
 // Pause flag, which controls to the calculation of the next grid
-assign pause_flag = regfile[2]
+assign pause_flag = regfile[41]
 
 
 // Initialises the grid when read_flag is set to high, when data is to be retrieved from the registers and stored in BRAM.
 reg [9:0] row_index;
-assign init_write_enable = regfile[1];
+assign init_write_enable = regfile[40];
 wire [9:0] init_write_address
 reg init_done;
 
