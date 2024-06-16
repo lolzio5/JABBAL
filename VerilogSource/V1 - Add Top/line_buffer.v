@@ -47,7 +47,7 @@ always (@posedge clk) begin
         end
         if (temp_fetch_counter <= 2'd2) begin
             line_3 <= fetch_mem;
-            fetch_addr <= calc_row + 2;   // This sets up the standard case  
+            fetch_addr <= calc_row + 10'd2;   // This sets up the standard case  
             valid_reg <= 1;
             temp_fetch_counter <= 2'd0; 
         end
@@ -71,7 +71,7 @@ always (@posedge clk) begin
         line_3 <= fetch_mem;
         
         //Set up fetch for next new line
-        fetch_addr <= calc_row + 10'b2;
+        fetch_addr <= calc_row + 10'd2;
         valid_reg <= 1;
     end
 end
