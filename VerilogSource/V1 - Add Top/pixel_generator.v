@@ -212,8 +212,9 @@ assign BRAM_B_WE = regfile[42];
 // Initialises the grid when read_flag is set to high, when data is to be retrieved from the registers and stored in BRAM.
 reg [9:0] row_index;
 assign init_write_enable = regfile[41];
-wire [9:0] init_write_address;
+reg [9:0] init_write_address;
 reg init_done;
+reg [1279:0] result_line;
 
 always @(posedge out_stream_aclk) begin
     if (periph_resetn) begin
@@ -305,8 +306,8 @@ reg             write;
 
 assign c = 1'b0;
 
-reg [X_WIDTH-1:0] x;
-reg [Y_WIDTH-1:0] y;
+reg [X_SIZE-1:0] x;
+reg [Y_SIZE-1:0] y;
 
 wire first = (x == 0) & (y==0);
 wire lastx = (x == X_SIZE - 1);
@@ -314,16 +315,16 @@ wire lasty = (y == Y_SIZE - 1);
 
 wire ready;
 
-always @(posedge out_stream_aclk and pause_flag) begin
+always @(posedge out_stream_aclk && pause_flag) begin
     if(BRAM_B_WE) begin
         top_line <= dout_line_A;
     end else begin
         top_line <= dout_line_B;
     end
 
-    if((y==719) && (pause_flag==0)) begin
-        current_ram_flag=!current_ram_flag;
-    end
+//    if((y==719) && (pause_flag==0)) begin
+//        current_ram_flag=!current_ram_flag;
+//    end
 
     write <= 1'b0;
 
