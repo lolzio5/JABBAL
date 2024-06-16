@@ -239,6 +239,8 @@ end
 // -------------------------------------------------------
 // ---------------- NEXT STATE CALCULATION ---------------
 // -------------------------------------------------------
+
+/**
 wire [9:0] fetch_addr;
 wire [9:0] calc_row;
 wire [1279:0] fetch_mem;
@@ -287,7 +289,7 @@ line_buffer buffer(
                  .bottom(bottom),
                  .valid(valid)
 );
-
+**/
 
 // -------------------------------------------------------
 // ---------------- OUTPUT LOGIC -------------------------
@@ -310,11 +312,11 @@ wire lasty = (y == Y_SIZE - 1);
 wire ready;
 
 always @(posedge out_stream_aclk and pause_flag) begin
-    if(current_ram_flag) begin
-        top_line <= dout_line_A;
-    end else begin
-        top_line <= dout_line_B;
-    end
+    //if(current_ram_flag) begin
+    top_line <= dout_line_A;
+    // end else begin
+        //top_line <= dout_line_B;
+    //end
 
     if((y==719) && (pause_flag==0)) begin
         current_ram_flag=!current_ram_flag;
