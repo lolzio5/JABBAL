@@ -64,7 +64,7 @@ module pixel_generator(
 
 localparam X_SIZE = 1280;
 localparam Y_SIZE = 720;
-parameter  REG_FILE_SIZE = 3;
+parameter  REG_FILE_SIZE = 42;
 localparam REG_FILE_AWIDTH = $clog2(REG_FILE_SIZE);
 parameter  AXI_LITE_ADDR_WIDTH = 8;
 
@@ -81,7 +81,7 @@ localparam AWAIT_READ = 2'b10;
 localparam AXI_OK = 2'b00;
 localparam AXI_ERR = 2'b10;
 
-reg [1079:0]                          regfile [REG_FILE_SIZE-1:0];
+reg [31:0]                          regfile [REG_FILE_SIZE-1:0];
 reg [REG_FILE_AWIDTH-1:0]           writeAddr, readAddr;
 reg [31:0]                          readData, writeData;
 reg [1:0]                           readState = AWAIT_RADD;
@@ -203,13 +203,16 @@ end
 // -------------------------------------------------------
 
 // Pause flag, which controls to the calculation of the next grid
-assign pause_flag = regfile[41]
+assign pause_flag = regfile[40];
+// PAUSE = regfile[40];
+// BRAM_A_WE = regfile[41];
+assign BRAM_B_WE = regfile[42];
 
 
 // Initialises the grid when read_flag is set to high, when data is to be retrieved from the registers and stored in BRAM.
 reg [9:0] row_index;
-assign init_write_enable = regfile[40];
-wire [9:0] init_write_address
+assign init_write_enable = regfile[41];
+wire [9:0] init_write_address;
 reg init_done;
 
 always @(posedge out_stream_aclk) begin
@@ -227,8 +230,8 @@ always @(posedge out_stream_aclk) begin
                         regfile[24], regfile[25], regfile[26], regfile[27], 
                         regfile[28], regfile[29], regfile[30], regfile[31], 
                         regfile[32], regfile[33], regfile[34], regfile[35], 
-                        regfile[36], regfile[37], regfile[38], regfile[39]}
-        y<=init_write_address;
+                        regfile[36], regfile[37], regfile[38], regfile[39]};
+        y <= init_write_address;
         init_write_address <= init_write_address + 10'd1;
         if (init_write_address == 10'd719) begin
             init_done <= 1'b1;
@@ -312,11 +315,11 @@ wire lasty = (y == Y_SIZE - 1);
 wire ready;
 
 always @(posedge out_stream_aclk and pause_flag) begin
-    //if(current_ram_flag) begin
-    top_line <= dout_line_A;
-    // end else begin
-        //top_line <= dout_line_B;
-    //end
+    if(BRAM_B_WE) begin
+        top_line <= dout_line_A;
+    end else begin
+        top_line <= dout_line_B;
+    end
 
     if((y==719) && (pause_flag==0)) begin
         current_ram_flag=!current_ram_flag;
@@ -382,5 +385,5 @@ blk_mem_gen_1 blk_ram_B(
                  .dina(results_line),
                  .douta(dout_line_B),
                  .ena(1),
-                 .wea(write));
+                 .wea(init_write_enable));
 endmodule
