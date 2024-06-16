@@ -198,7 +198,6 @@ end
 // -------------------------------------------------------
 
 
-
 // -------------------------------------------------------
 // ---------------- GRID INITIALISATION ------------------
 // -------------------------------------------------------
@@ -206,56 +205,34 @@ end
 // Pause flag, which controls to the calculation of the next grid
 assign pause_flag = regfile[2]
 
-// Read flag, to initialise the grid
-assign read_flag = regfile[1]
-
-// States, initialise grid or do nothing
-localparam IDLE = 2'b00, WRITE_1 = 2'b01, WRITE_2 = 2'b10;
 
 // Initialises the grid when read_flag is set to high, when data is to be retrieved from the registers and stored in BRAM.
 reg [9:0] row_index;
-reg [1:0] init_state;
-reg done;
+assign init_write_enable = regfile[1];
+wire [9:0] init_write_address
+reg init_done;
 
-always @(posedge s_axi_lite_aclk or posedge axi_resetn) begin
-    if (axi_resetn) begin
-        init_state <= IDLE;
-        row_index_1<=0;
-        row_index_2<=1;
-        done<=0;
-        current_ram_flag=0;
-    end else begin
-        case (init_state)
-            IDLE: begin
-                if (done==1) begin
-                    init_state<=IDLE;
-                end else if ((read_flag==1) && (done==0)) begin
-                    init_state <= WRITE_1;
-                end else if ((read_flag==0) && (done==0)) begin
-                    init_state <= WRITE_2;
-                end
-            end
-            WRITE_1: begin
-                results_line <= regfile[0]; // Write to the appropriate location in BRAM
-                if (read_flag == 1) begin
-                    row_index_1<=row_index_1+1
-                    init_state <= WRITE_2;
-                end
-                if (row_index_1=719) begin
-                    done<=1
-                end
-            end
-            WRITE_2: begin
-                results_line <= regfile[0]; // Write to the appropriate location in BRAM
-                if (read_flag == 0) begin
-                    row_index_2<=row_index_2+1
-                    init_state <=WRITE_1;
-                end
-                if (row_index_2=719) begin
-                    done<=1
-                end
-            end
-        endcase
+always @(posedge out_stream_aclk) begin
+    if (periph_resetn) begin
+        init_write_address <= 10'd0;
+        init_done <= 1'b0;
+    end else if (init_write_enable) begin
+        // Concatenates the whole line from the 40 registers
+        result_line <= {regfile[0], regfile[1], regfile[2], regfile[3], 
+                        regfile[4], regfile[5], regfile[6], regfile[7], 
+                        regfile[8], regfile[9], regfile[10], regfile[11], 
+                        regfile[12], regfile[13], regfile[14], regfile[15], 
+                        regfile[16], regfile[17], regfile[18], regfile[19], 
+                        regfile[20], regfile[21], regfile[22], regfile[23], 
+                        regfile[24], regfile[25], regfile[26], regfile[27], 
+                        regfile[28], regfile[29], regfile[30], regfile[31], 
+                        regfile[32], regfile[33], regfile[34], regfile[35], 
+                        regfile[36], regfile[37], regfile[38], regfile[39]}
+        y<=init_write_address;
+        init_write_address <= init_write_address + 10'd1;
+        if (init_write_address == 10'd719) begin
+            init_done <= 1'b1;
+        end
     end
 end
 
