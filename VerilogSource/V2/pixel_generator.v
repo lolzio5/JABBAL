@@ -1,7 +1,7 @@
 
 //////////////////////////////////////////////////////////////////////////////////
 // Company: JABBAL
-// Engineers: Bon, Lolézio, Ajay
+// Engineers: Bon, Lol�zio, Ajay
 // 
 // Create Date: 16.05.2024 22:03:08
 // Design Name: 
@@ -64,7 +64,11 @@ module pixel_generator(
 
 localparam X_SIZE = 1280;
 localparam Y_SIZE = 720;
-parameter  REG_FILE_SIZE = 42;
+
+localparam X_WIDTH = $clog2(X_SIZE);
+localparam Y_WIDTH = $clog2(Y_SIZE);
+
+parameter  REG_FILE_SIZE = 43;
 localparam REG_FILE_AWIDTH = $clog2(REG_FILE_SIZE);
 parameter  AXI_LITE_ADDR_WIDTH = 8;
 
@@ -215,6 +219,7 @@ assign init_write_enable = regfile[41];
 reg [9:0] init_write_address;
 reg init_done;
 reg [1279:0] result_line;
+reg [9:0] init_read_address;
 
 always @(posedge out_stream_aclk) begin
     if (periph_resetn) begin
@@ -232,7 +237,7 @@ always @(posedge out_stream_aclk) begin
                         regfile[28], regfile[29], regfile[30], regfile[31], 
                         regfile[32], regfile[33], regfile[34], regfile[35], 
                         regfile[36], regfile[37], regfile[38], regfile[39]};
-        y <= init_write_address;
+        init_read_address <= init_write_address;
         init_write_address <= init_write_address + 10'd1;
         if (init_write_address == 10'd719) begin
             init_done <= 1'b1;
@@ -306,14 +311,16 @@ reg             write;
 
 assign c = 1'b0;
 
-reg [X_SIZE-1:0] x;
-reg [Y_SIZE-1:0] y;
+reg [X_WIDTH-1:0] x;
+wire [Y_WIDTH-1:0] y;
 
 wire first = (x == 0) & (y==0);
 wire lastx = (x == X_SIZE - 1);
 wire lasty = (y == Y_SIZE - 1);
 
 wire ready;
+
+reg [9:0] y_out_address;
 
 always @(posedge out_stream_aclk) begin
     if(BRAM_B_WE) begin
@@ -333,9 +340,9 @@ always @(posedge out_stream_aclk) begin
             if(lastx) begin
                 x <= 11'd0;
                 if(lasty) begin
-                    y <= 10'd0;
+                    y_out_address <= 10'd0;
                 end else begin
-                    y <= y + 1'b1;
+                    y_out_address <= y_out_address + 1'b1;
                 end
             end else begin
                 x <= x + 1'b1; 
@@ -344,10 +351,12 @@ always @(posedge out_stream_aclk) begin
         end
     end else begin
         x <= 11'd0;
-        y <= 10'd0;
+        y_out_address <= 10'd0;
     end
 
 end
+
+assign y = init_done ? y_out_address: init_read_address;
 
 wire valid_int = 1'b1;
 wire [4:0] current_reg;
