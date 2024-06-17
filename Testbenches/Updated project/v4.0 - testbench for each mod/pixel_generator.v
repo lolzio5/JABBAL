@@ -329,7 +329,7 @@ wire lasty = (y == Y_SIZE - 1);
 wire ready;
 
 reg [Y_WIDTH-1:0] y_out_address;
-reg  override
+reg  override;
 
 always @(posedge out_stream_aclk) begin
     //bon's secret back door
