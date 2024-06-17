@@ -116,6 +116,7 @@ while True:
                         try:
                             serialized_matrix = pickle.dumps(matrix)
                             matrix_size = len(serialized_matrix)
+                            print(matrix)
                             num_chunks = (matrix_size // 4096) + 1
                             client_socket.send(pickle.dumps(num_chunks))
                             for i in range(num_chunks):
@@ -136,6 +137,7 @@ while True:
                 else:
                     if (is_hand_open(lmHand) and done_sending):
                         message="P" # Pause
+                        print(message)
                         pickled_message=pickle.dumps(message)
                         client_socket.send(pickled_message)
 

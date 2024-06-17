@@ -221,8 +221,8 @@ assign BRAM_B_WE = regfile[42];
 reg [Y_WIDTH-1:0]           init_write_address;
 reg [Y_WIDTH-1:0]           init_read_address;
 
-reg                 init_done;
-reg [X_SIZE-1:0]        result_line;
+reg                         init_done;
+reg [X_SIZE-1:0]            result_line;
 
 always @(posedge out_stream_aclk) begin
     if (periph_resetn) begin
@@ -294,13 +294,13 @@ wire [Y_WIDTH-1:0]  calc_row_2;
 //BRAM WIRE
 wire [Y_WIDTH-1:0]  fetch_addr_line;
 wire [X_WIDTH-1:0]  fetch_mem_line;
-wire [X_WIDTH-1:0]  
+wire [X_WIDTH-1:0]  //what is this===============================================================================
 
 
 
 line_buffer buffer(
     .clk(out_stream_aclk),
-    .calc_row(calc_row_out), // FROM line iterator 
+    .calc_row(calc_row_out), // FROM line iterator `
 
     // Fetching stuff
     .fetch_addr(fetch_addr_line), // !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!  TO read BRAM
@@ -323,51 +323,51 @@ parallel_next_state next_state(
     .top_row(top),    // FROM line_buffer
     .middle_row(middle), // FROM line_buffer
     .bottom_row(bottom), // FROM line_buffer
-    .result(result_line), // TO !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!! BRAM write
+    .result(parallel_next_state_result_line), // TO !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!! BRAM write
 
     // New
     .calc_row_in(calc_row_2),    // FROM line_buffer
     .calc_flg(calc_flag_2),             // FROM line_buffer
     .valid_set(valid_set),            // FROM line_buffer
-    .write_addr(),    // !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!! TO BRAM write
-    .write_en()             // !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!! TO BRAM write
-);
-
+    .write_addr(parallel_next_state_write_addr_line),    // !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!! TO BRAM write
+    .write_en(parallel_next_state_write_en_line));             // !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!! TO BRAM write
 mode_selector selector(
     .clk(out_stream_aclk),
-    .mode(reg[40]), //PAUSE FLAG
+    .mode(regfile[40]), //PAUSE FLAG
 
-    .line_buffer_fetch_addr(),
-    .line_buffer_fetch_mem(),
-    .parallel_next_state_result(),
-    .parallel_next_state_write_addr(),
-    .parallel_next_state_write_en(),
+    .line_buffer_fetch_addr(fetch_addr_line),
+    .line_buffer_fetch_mem(fetch_mem_line),
+    .parallel_next_state_write_addr(parallel_next_state_write_addr_line),
+    .parallel_next_state_result(parallel_next_state_result_line),
+    .parallel_next_state_write_en(parallel_next_state_write_en_line),
+    .video_out_row_addr(y),
+    .video_out_row_data(video_out_row),
 
-    .BRAM_A_addra(y),
-    .BRAM_A_dina(result_line),
-    .BRAM_A_douta(dout_line_A),
-    .BRAM_A_wea(write),
-    .BRAM_A_addrb(y),
-    .BRAM_A_dinb(result_line),
-    .BRAM_A_doutb(dout_line_A2),
-    .BRAM_A_web(write),
 
-    .BRAM_B_addra(y),
-    .BRAM_B_dina(result_line),
-    .BRAM_B_douta(dout_line_B),
-    .BRAM_B_wea(regfile[41]),
-    .BRAM_B_addrb(y),
-    .BRAM_B_dinb(result_line),
-    .BRAM_B_doutb(dout_line_B2),
-    .BRAM_B_web(write)
-);
+    .BRAM_A_addra(BRAM_A_addra_line),
+    .BRAM_A_dina(BRAM_A_dina_line),
+    .BRAM_A_douta(BRAM_A_douta_line),
+    .BRAM_A_wea(BRAM_A_wea_line),
+    .BRAM_A_addrb(BRAM_A_addrb_line),
+    .BRAM_A_dinb(BRAM_A_dinb_line),
+    .BRAM_A_doutb(BRAM_A_doutb_line),
+    .BRAM_A_web(BRAM_A_web_line),
+
+    .BRAM_B_addra(BRAM_B_addra_line),
+    .BRAM_B_dina(BRAM_B_dina_line),
+    .BRAM_B_douta(BRAM_B_douta_line),
+    .BRAM_B_wea(BRAM_B_wea_line),
+    .BRAM_B_addrb(BRAM_B_addrb_line),
+    .BRAM_B_dinb(BRAM_B_dinb_line),
+    .BRAM_B_doutb(BRAM_B_doutb_line),
+    .BRAM_B_web(BRAM_B_web_line));
 
 // -------------------------------------------------------
 // ---------------- OUTPUT LOGIC -------------------------
 // -------------------------------------------------------
 
 //BRAM register
-reg [X_SIZE-1:0]    top_line;
+reg [X_SIZE-1:0]    video_out_row;
 reg [X_SIZE-1:0]    results_line;
 reg                 write;
 
@@ -388,10 +388,10 @@ reg  override;
 always @(posedge out_stream_aclk) begin
     //bon's secret back door
     if(BRAM_B_WE) begin
-        top_line <= dout_line_A;
+        video_out_row <= dout_line_A;
         override <= 1'b1;
     end else begin
-        top_line <= dout_line_B;
+        video_out_row <= dout_line_B;
         override <= 1'b0;
 
     end
@@ -432,7 +432,7 @@ wire state;
 wire [X_WIDTH-1:0] inverted_x;
 
 assign inverted_x = 11'd1279 - x;
-assign state = top_line[inverted_x];
+assign state = video_out_row[inverted_x];
 
 wire [1279:0] dout_line_A;
 wire [1279:0] dout_line_B;
@@ -449,35 +449,33 @@ packer pixel_packer(
                     .out_stream_tdata(out_stream_tdata), .out_stream_tkeep(out_stream_tkeep),
                     .out_stream_tlast(out_stream_tlast), .out_stream_tready(out_stream_tready),
                     .out_stream_tvalid(out_stream_tvalid), .out_stream_tuser(out_stream_tuser) );
-
+blk_mem_gen_0 blk_ram_A(
+                 .addra(BRAM_A_addra_line),
+                 .clka(out_stream_aclk),
+                 .dina(BRAM_A_dina_line),
+                 .douta(BRAM_A_douta_line),
+                 .ena(1),
+                 .wea(BRAM_A_wea_line),
+                 .addrb(BRAM_A_addrb_line),
+                 .clkb(out_stream_aclk),
+                 .dinb(BRAM_A_dinb_line),
+                 .doutb(BRAM_A_doutb_line),
+                 .enb(1),
+                 .web(BRAM_A_web_line));                 
+blk_mem_gen_1 blk_ram_B(
+                 .addra(BRAM_B_addra_line),
+                 .clka(out_stream_aclk),
+                 .dina(BRAM_B_dina_line),
+                 .douta(BRAM_B_douta_line),
+                 .ena(1),
+                 .wea(BRAM_B_wea_line),
+                 .addrb(BRAM_B_addrb_line),
+                 .clkb(out_stream_aclk),
+                 .dinb(BRAM_B_dinb_line),
+                 .doutb(BRAM_B_doutb_line),
+                 .enb(1),
+                 .web(BRAM_B_web_line));
 
 //all READ port 'a' for line buffer
 //all READ port 'b' for outstream video
-blk_mem_gen_0 blk_ram_A(
-                 .addra(y),
-                 .clka(out_stream_aclk),
-                 .dina(result_line),
-                 .douta(dout_line_A),
-                 .ena(1),
-                 .wea(write),
-                 .addrb(y),
-                 .clkb(out_stream_aclk),
-                 .dinb(result_line),
-                 .doutb(dout_line_A2),
-                 .enb(1),
-                 .web(write));
-                 
-blk_mem_gen_1 blk_ram_B(
-                 .addra(y),
-                 .clka(out_stream_aclk),
-                 .dina(result_line),
-                 .douta(dout_line_B),
-                 .ena(1),
-                 .wea(regfile[41]),
-                 .addrb(y),
-                 .clkb(out_stream_aclk),
-                 .dinb(result_line),
-                 .doutb(dout_line_B2),
-                 .enb(1),
-                 .web(write));
 endmodule

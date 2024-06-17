@@ -10,7 +10,7 @@ module line_buffer(
     output [1279:0] top,
     output [1279:0] middle,
     output [1279:0] bottom,
-    output valid
+    output          valid_set
 );
 
 reg [1279:0] line_1;
@@ -20,11 +20,11 @@ reg [1279:0] line_3;
 assign top = line_1;
 assign middle = line_2;
 assign bottom = line_3;
-assign valid = valid_reg;
+assign valid_set = valid_reg;
 
-reg [1:0] temp_fetch_counter = 2'd0; //INITIALISE as 0 - not sure if this is synthesizable
+reg [1:0]   temp_fetch_counter = 2'd0; //INITIALISE as 0 - not sure if this is synthesizable
 
-reg valid_reg;
+reg         valid_reg;
 
 
 always (@posedge clk) begin
