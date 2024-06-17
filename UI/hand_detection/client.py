@@ -1,6 +1,6 @@
 import socket
 import pickle
-import numpy as np
+from objsize import get_deep_size
 
 # Initialize TCP client
 client_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
@@ -12,17 +12,17 @@ pause = 0
 
 try:
     while True:
-        # Receive data from server
-        data = b""
-        packet = client_socket.recv(99999999)
-
-        # Deserialize received data
-        message = pickle.loads(packet)
-        if isinstance(message, np.array):
-            print("received matrix")
-        elif isinstance(message, str):
-            # Assuming the received object is a string
-            print("Received a string:", message)
+        if (not done):
+            num_chunks = pickle.loads(client_socket.recv(4096))
+            data = b""
+            for i in range(num_chunks):
+                chunk = client_socket.recv(4096)
+                data += chunk                
+            matrix=pickle.loads(data)
+            
+            done=1
+        message = pickle.loads(client_socket.recv(2048))
+        #print("Received a string:", message)
 
 except Exception as e:
     print(f"Error: {e}")

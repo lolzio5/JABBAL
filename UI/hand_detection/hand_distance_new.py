@@ -104,7 +104,7 @@ while True:
                         w_end = min(imgResize.shape[1], whiteImage.shape[1])
                         whiteImage[hCenterGap:h_end, 0:w_end] = imgResize[0:(h_end - hCenterGap), 0:w_end]
 
-                cv2.imshow(("White Image"), whiteImage)
+                cv2.imshow(("Zoomed Image"), whiteImage)
                 # prediction, index = classifier.getPrediction(whiteImage)
                 # print(label[index], lmHand)
                 exec_time=time.time()-start
@@ -112,10 +112,17 @@ while True:
                     drawing = False
                     if not done_sending:
                         for alive in coordinates:
-                            matrix[int(alive[0])*2][int(alive[1]*1.5)]=False
+                            matrix[int(alive[0])*2][int(alive[1]*1.5)]=1
                         try:
                             serialized_matrix = pickle.dumps(matrix)
-                            client_socket.sendall(serialized_matrix)
+                            matrix_size = len(serialized_matrix)
+                            num_chunks = (matrix_size // 4096) + 1
+                            client_socket.send(pickle.dumps(num_chunks))
+                            for i in range(num_chunks):
+                                start = i * 4096
+                                end = start + 4096
+                                chunk = serialized_matrix[start:end]
+                                client_socket.send(chunk)
                             print("Starting grid sent!")
                             done_sending=1
                         except Exception as e:
@@ -127,7 +134,7 @@ while True:
                         if w // length > 6:
                             coordinates.add((lmHand[4][0:2][0], lmHand[4][0:2][1]))
                 else:
-                    if is_hand_open(lmHand):
+                    if (is_hand_open(lmHand) and done_sending):
                         message="P" # Pause
                         pickled_message=pickle.dumps(message)
                         client_socket.send(pickled_message)
