@@ -8,23 +8,30 @@ module line_interator(); // DONT COPY
 
 reg calc_flag = 0;      // Calc flag - INITIALISED HERE
 
-wire calc_row_out; // TO line_buffer
-reg calc_row_reg;
+wire [9:0] calc_row_out; // TO line_buffer
+reg [9:0] calc_row_reg = 0;
 assign calc_row_out = calc_row_reg;
+reg calc_flag_flag;
+
+always@(posedge mode or negedge mode) begin
+    calc_row_reg <= 0
+ end
+
 
 
 regfile[41] <= 1'b1;
 
 
 always @(posedge clk) begin
-    if (calc_flg == 1) begin
+    if (calc_flag == 1) begin
         if (valid_set) begin
             if (calc_row_reg == 10'd719) begin
-                calc_flag <= 0;
+                calc_flag_flag <= 0;
                 calc_row_reg <= 0;
             end
             else begin
                 calc_row_reg <= calc_row_reg + 1;
+                calc_flag_flag<=1;
             end
         end
         else begin
@@ -33,6 +40,7 @@ always @(posedge clk) begin
     end
 end
 
+assign calc_flag = calc_flag_flag ? 1: 0;
 // Interconnect wires between TOP , parrallel_next_state and line buffer
 // _2 is for wires betwenen line buffer and parallel_next_state
 wire valid_set;
