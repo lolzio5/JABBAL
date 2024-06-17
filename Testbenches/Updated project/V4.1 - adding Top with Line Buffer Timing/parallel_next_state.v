@@ -1,9 +1,16 @@
 module parallel_next_state(
-    input wire [row_length-1:0] top_row,
-    input wire [row_length-1:0] middle_row,
-    input wire [row_length-1:0] bottom_row,
     input wire clk,
-    output wire [row_length-1:0] result 
+    input wire [row_length-1:0] top_row,    // FROM line_buffer
+    input wire [row_length-1:0] middle_row, // FROM line_buffer
+    input wire [row_length-1:0] bottom_row, // FROM line_buffer
+    output wire [row_length-1:0] result, // TO BRAM write
+
+    // New
+    input [9:0] calc_row_in,    // FROM line_buffer
+    input calc_flg,             // FROM line_buffer
+    input valid_set,            // FROM line_buffer
+    output [9:0] write_addr,    // To BRAM write
+    output write_en             // TO BRAM write
 );
 
     parameter row_length = 1280;
@@ -25,5 +32,25 @@ module parallel_next_state(
             );
         end
     endgenerate
-endmodule
 
+    // NEW STUFF
+
+    reg [9:0] write_addr_reg;
+    assign write_addr = write_addr_reg;
+
+    reg write_en_reg;
+    assign write_en = write_en_reg;
+
+    always @(posedge clk) begin
+        write_addr_reg <= calc_row_in;   // Sends address to write to
+        
+        // SET WRITE ENABLE LOW IF NOT VALID OR IF FINISHED WIRTING - prevents unwanted/corrupt writing 
+        if (valid_set && calc_flg) begin // Only writes if valid and we set calc_flg high
+            write_en_reg <= 1;
+        end
+        else begin
+            write_en_reg <= 0;
+        end
+    end
+    
+endmodule

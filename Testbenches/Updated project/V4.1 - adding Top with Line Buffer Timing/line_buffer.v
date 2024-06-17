@@ -1,17 +1,37 @@
 module line_buffer(
     input clk,
-    input [9:0] calc_row, // 720 rows - need 10 bits
+    input [9:0] calc_row, // FROM line iterator 720 rows - need 10 bits
 
     // Fetching stuff
-    output [9:0] fetch_addr,
-    input [1279:0] fetch_mem,
+    output [9:0] fetch_addr, // TO read BRAM
+    input [1279:0] fetch_mem,   // FROM read BRAM
 
     // Buffers
-    output [1279:0] top,
-    output [1279:0] middle,
-    output [1279:0] bottom,
-    output          valid_set
+    output [1279:0] top,    // TO parallel_next_state
+    output [1279:0] middle, // TO parallel_next_state
+    output [1279:0] bottom, // TO parallel_next_state
+    
+    // New
+    input calc_flag_in,         // FROM line_iterator 
+    output valid_set,           // TO parallel_next_state AND line_iterator
+    output [9:0] calc_row_out,  // TO parallel_next_state 
+    output calc_flag_out        // TO parallel_next_state
 );
+
+reg calc_row_out_reg;
+assign calc_row_out = calc_row_out_reg;
+
+reg calc_flag_out_reg;
+assign calc_flag_out = calc_flag_out_reg
+
+// Control signal logic
+always (@posedge clk) begin
+    calc_row_out_reg <= calc_row;
+    calc_flag_out_reg <= calc_flag_in;
+end
+
+reg valid_reg;
+assign valid_set = valid_reg;
 
 reg [1279:0] line_1;
 reg [1279:0] line_2;
@@ -20,13 +40,11 @@ reg [1279:0] line_3;
 assign top = line_1;
 assign middle = line_2;
 assign bottom = line_3;
-assign valid_set = valid_reg;
-
-reg [1:0]   temp_fetch_counter = 2'd0; //INITIALISE as 0 - not sure if this is synthesizable
-
-reg         valid_reg;
 
 
+reg [1:0] temp_fetch_counter = 2'd0; //INITIALISE as 0 - not sure if this is synthesizable {Pretty sure it is}
+
+// Line buffer logic
 always (@posedge clk) begin
     // Special case - first line
     if (calc_row == 0) begin

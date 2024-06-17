@@ -284,16 +284,16 @@ end
 // Interconnect wires between TOP , parrallel_next_state and line buffer
 // _2 is for wires betwenen line buffer and parallel_next_state
 wire                valid_set;
-wire [X_WIDTH-1:0]  top;
-wire [X_WIDTH-1:0]  middle;
-wire [X_WIDTH-1:0]  bottom;
+wire [X_SIZE-1:0]  top;
+wire [X_SIZE-1:0]  middle;
+wire [X_SIZE-1:0]  bottom;
 wire                calc_flag_1;
 wire                calc_flag_2;
 wire [Y_WIDTH-1:0]  calc_row_2;
 
 //BRAM WIRE
 wire [Y_WIDTH-1:0]  fetch_addr_line;
-wire [X_WIDTH-1:0]  fetch_mem_line;
+wire [X_SIZE-1:0]  fetch_mem_line;
 wire [X_WIDTH-1:0]  //what is this===============================================================================
 
 

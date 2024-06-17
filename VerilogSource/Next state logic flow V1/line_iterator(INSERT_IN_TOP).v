@@ -36,6 +36,7 @@ wire top;
 wire middle;
 wire bottom;
 wire calc_flag_1;
+assign calc_flag_1 = calc_flag;
 wire calc_flag_2;
 wire calc_row_2;
 
