@@ -16,18 +16,19 @@ done_sending=0
 
 # Initialize TCP server
 server_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-server_socket.bind(('localhost', 9999))
-server_socket.listen(1)
+server_socket.bind(('192.168.2.1', 9999))
+server_socket.listen(1) 
 print("Waiting for a connection...")
 client_socket, client_address = server_socket.accept()
 print(f"Connected to {client_address}")
-
-cap = cv2.VideoCapture(0)
+print('hope its running')
+cap = cv2.VideoCapture(1)
 detector = HandDetector(maxHands=1)
 #classifier = Classifier(r"UI\hand_detection\model_keras\keras_model.h5", r"UI\hand_detection\model_keras\labels.txt")
 label = ["draw","fast","ok","reset","select","start","stop"]
 coordinates=set()
-matrix=np.zeros((1280,720), dtype=np.bool_)
+# matrix=np.zeros((1280,720), dtype=np.bool_)
+matrix=np.zeros((40,32), dtype=np.bool_)
 
 def is_thumbs_up(hand):
     thumb_tip = hand[4][1]  # y-coordinate of thumb tip
@@ -112,10 +113,11 @@ while True:
                     drawing = False
                     if not done_sending:
                         for alive in coordinates:
-                            matrix[int(alive[0])*2][int(alive[1]*1.5)]=True
+                           # matrix[int(alive[0])*2][int(alive[1]*1.5)]=True
+                            matrix[int(alive[0]/16)][int(alive[1]/16)]=True
                         try:
                             serialized_matrix = pickle.dumps(matrix)
-                            client_socket.sendall(serialized_matrix)
+                            client_socket.send(serialized_matrix)
                             print("Starting grid sent!")
                             done_sending=1
                         except Exception as e:
@@ -126,11 +128,11 @@ while True:
                     if length != 0:
                         if w // length > 6:
                             coordinates.add((lmHand[4][0:2][0], lmHand[4][0:2][1]))
-                else:
-                    if is_hand_open(lmHand):
-                        message="P" # Pause
-                        pickled_message=pickle.dumps(message)
-                        client_socket.send(pickled_message)
+               # else:
+                  #  if is_hand_open(lmHand):
+                  #      message="P" # Pause
+                  #      pickled_message=pickle.dumps(message)
+                   #     client_socket.send(pickled_message)
 
         cv2.imshow(("Image"), img)
     else:

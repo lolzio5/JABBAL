@@ -1,7 +1,7 @@
 
 //////////////////////////////////////////////////////////////////////////////////
 // Company: JABBAL
-// Engineers: Bon, Lol�zio, Ajay
+// Engineers: Bon, Lol?zio, Ajay
 // 
 // Create Date: 16.05.2024 22:03:08
 // Design Name: 
@@ -208,25 +208,29 @@ end
 
 // Pause flag, which controls to the calculation of the next grid
 assign pause_flag = regfile[40];
+assign BRAM_B_WE = regfile[42];
+
+//real implementation
 // PAUSE = regfile[40];
 // BRAM_A_WE = regfile[41];
-assign BRAM_B_WE = regfile[42];
 
 
 // Initialises the grid when read_flag is set to high, when data is to be retrieved from the registers and stored in BRAM.
-reg [9:0] row_index;
-assign init_write_enable = regfile[41];
-reg [9:0] init_write_address;
-reg init_done;
-reg [1279:0] result_line;
-reg [9:0] init_read_address;
+
+assign init_write_enable = regfile[41];//BRAM_A_WE //set by python to signal data is ready at the end
+
+reg [Y_WIDTH-1:0]           init_write_address;
+reg [Y_WIDTH-1:0]           init_read_address;
+
+reg                 init_done;
+reg [1279:0]        result_line;
 
 always @(posedge out_stream_aclk) begin
     if (periph_resetn) begin
-        init_write_address <= 10'd0;
+        init_write_address <= {Y_WIDTH{1'b0}};
         init_done <= 1'b0;
     end else if (init_write_enable) begin
-        // Concatenates the whole line from the 40 registers
+        // Concatenates the whole line from the 40 registers, each 32bits
         result_line <= {regfile[0], regfile[1], regfile[2], regfile[3], 
                         regfile[4], regfile[5], regfile[6], regfile[7], 
                         regfile[8], regfile[9], regfile[10], regfile[11], 
@@ -238,11 +242,15 @@ always @(posedge out_stream_aclk) begin
                         regfile[32], regfile[33], regfile[34], regfile[35], 
                         regfile[36], regfile[37], regfile[38], regfile[39]};
         init_read_address <= init_write_address;
-        init_write_address <= init_write_address + 10'd1;
-        if (init_write_address == 10'd719) begin
+        init_write_address <= init_write_address + 1'b1;
+        if (init_write_address == Y_SIZE-1) begin
             init_done <= 1'b1;
         end
     end
+end
+
+always @(negedge out_stream_aclk) begin
+    regfile[41] <= 32'b0;
 end
 
 // -------------------------------------------------------
@@ -305,13 +313,13 @@ line_buffer buffer(
 // -------------------------------------------------------
 
 //BRAM register
-reg [1279:0]    top_line;
-reg [1279:0]    results_line;
+reg [X_SIZE-1:0]    top_line;
+reg [X_SIZE-1:0]    results_line;
 reg             write;
 
 assign c = 1'b0;
 
-reg [X_WIDTH-1:0] x;
+reg  [X_WIDTH-1:0] x;
 wire [Y_WIDTH-1:0] y;
 
 wire first = (x == 0) & (y==0);
@@ -320,13 +328,18 @@ wire lasty = (y == Y_SIZE - 1);
 
 wire ready;
 
-reg [9:0] y_out_address;
+reg [Y_WIDTH-1:0] y_out_address;
+reg  override
 
 always @(posedge out_stream_aclk) begin
+    //bon's secret back door
     if(BRAM_B_WE) begin
         top_line <= dout_line_A;
+        override <= 1'b1;
     end else begin
         top_line <= dout_line_B;
+        override <= 1'b0;
+
     end
 
 //    if((y==719) && (pause_flag==0)) begin
@@ -338,9 +351,9 @@ always @(posedge out_stream_aclk) begin
     if(periph_resetn) begin
         if(ready) begin
             if(lastx) begin
-                x <= 11'd0;
+                x <= {X_WIDTH{1'b0}};
                 if(lasty) begin
-                    y_out_address <= 10'd0;
+                    y_out_address <= {Y_WIDTH{1'b0}};
                 end else begin
                     y_out_address <= y_out_address + 1'b1;
                 end
@@ -350,19 +363,19 @@ always @(posedge out_stream_aclk) begin
 
         end
     end else begin
-        x <= 11'd0;
-        y_out_address <= 10'd0;
+        x <= {X_WIDTH{1'b0}};
+        y_out_address <= {Y_WIDTH{1'b0}};
     end
 
 end
 
-assign y = init_done ? y_out_address: init_read_address;
+assign y = (init_done | override)? y_out_address: init_read_address;
 
 wire valid_int = 1'b1;
 wire [4:0] current_reg;
 wire state;
 
-wire [10:0] inverted_x;
+wire [X_WIDTH-1:0] inverted_x;
 
 assign inverted_x = 11'd1279 - x;
 assign state = top_line[inverted_x];
@@ -374,26 +387,27 @@ assign r = state * 8'hCB;
 assign g = state * 8'h41;
 assign b = state * 8'h6B;
 
-packer pixel_packer(    .aclk(out_stream_aclk),
-                        .aresetn(periph_resetn),
-                        .r(r), .g(g), .b(b),
-                        .eol(lastx), .in_stream_ready(ready), .valid(valid_int), .sof(first),
-                        .out_stream_tdata(out_stream_tdata), .out_stream_tkeep(out_stream_tkeep),
-                        .out_stream_tlast(out_stream_tlast), .out_stream_tready(out_stream_tready),
-                        .out_stream_tvalid(out_stream_tvalid), .out_stream_tuser(out_stream_tuser) );
+packer pixel_packer(    
+                    .aclk(out_stream_aclk),
+                    .aresetn(periph_resetn),
+                    .r(r), .g(g), .b(b),
+                    .eol(lastx), .in_stream_ready(ready), .valid(valid_int), .sof(first),
+                    .out_stream_tdata(out_stream_tdata), .out_stream_tkeep(out_stream_tkeep),
+                    .out_stream_tlast(out_stream_tlast), .out_stream_tready(out_stream_tready),
+                    .out_stream_tvalid(out_stream_tvalid), .out_stream_tuser(out_stream_tuser) );
 blk_mem_gen_0 blk_ram_A(
-                 .addra(y),
-                 .clka(out_stream_aclk),
-                 .dina(results_line),
-                 .douta(fetch_mem),
-                 .ena(1),
-                 .wea(write));
+                    .addra(y),
+                    .clka(out_stream_aclk),
+                    .dina(result_line),
+                    .douta(dout_line_A),
+                    .ena(1),
+                    .wea(write));
                  
 blk_mem_gen_1 blk_ram_B(
-                 .addra(y),
-                 .clka(out_stream_aclk),
-                 .dina(results_line),
-                 .douta(dout_line_B),
-                 .ena(1),
-                 .wea(init_write_enable));
+                    .addra(y),
+                    .clka(out_stream_aclk),
+                    .dina(result_line),
+                    .douta(dout_line_B),
+                    .ena(1),
+                    .wea(init_write_enable));
 endmodule
