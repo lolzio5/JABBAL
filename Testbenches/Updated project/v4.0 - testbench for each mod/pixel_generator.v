@@ -216,8 +216,9 @@ assign BRAM_B_WE = regfile[42];
 
 
 // Initialises the grid when read_flag is set to high, when data is to be retrieved from the registers and stored in BRAM.
+//wire init_write_enable
 
-assign init_write_enable = regfile[41];//BRAM_A_WE //set by python to signal data is ready at the end
+//assign init_write_enable = regfile[41];//BRAM_A_WE //set by python to signal data is ready at the end
 
 reg [Y_WIDTH-1:0]           init_write_address;
 reg [Y_WIDTH-1:0]           init_read_address;
@@ -229,7 +230,7 @@ always @(posedge out_stream_aclk) begin
     if (periph_resetn) begin
         init_write_address <= {Y_WIDTH{1'b0}};
         init_done <= 1'b0;
-    end else if (init_write_enable && !init_done) begin
+    end else if (regfile[41] && !init_done) begin
         // Concatenates the whole line from the 40 registers, each 32bits
         result_line <= {regfile[0], regfile[1], regfile[2], regfile[3], 
                         regfile[4], regfile[5], regfile[6], regfile[7], 
@@ -409,5 +410,5 @@ blk_mem_gen_1 blk_ram_B(
                     .dina(result_line),
                     .douta(dout_line_B),
                     .ena(1),
-                    .wea(init_write_enable));
+                    .wea(regfile[41]));
 endmodule
