@@ -13,7 +13,7 @@ reg calc_row_reg;
 assign calc_row_out = calc_row_reg;
 
 always @(posedge clk) begin
-    if (calc_flg == 1) begin
+    if (calc_flag == 1) begin
         if (valid_set) begin
             if (calc_row_reg == 10'd719) begin
                 calc_flag <= 0;
