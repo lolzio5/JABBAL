@@ -12,6 +12,10 @@ wire calc_row_out; // TO line_buffer
 reg calc_row_reg;
 assign calc_row_out = calc_row_reg;
 
+
+regfile[41] <= 1'b1;
+
+
 always @(posedge clk) begin
     if (calc_flg == 1) begin
         if (valid_set) begin

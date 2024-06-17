@@ -207,8 +207,6 @@ end
 // -------------------------------------------------------
 
 // Pause flag, which controls to the calculation of the next grid
-assign pause_flag = regfile[40];
-assign BRAM_B_WE = regfile[42];
 
 
 
@@ -224,29 +222,37 @@ reg [Y_WIDTH-1:0]           init_read_address;
 reg                         init_done;
 reg [X_SIZE-1:0]            result_line;
 
-always @(posedge out_stream_aclk) begin
-    if (periph_resetn) begin
-        init_write_address <= {Y_WIDTH{1'b0}};
-        init_done <= 1'b0;
-    end else if (regfile[41] && !init_done) begin
-        // Concatenates the whole line from the 40 registers, each 32bits
-        result_line <= {regfile[0], regfile[1], regfile[2], regfile[3], 
-                        regfile[4], regfile[5], regfile[6], regfile[7], 
-                        regfile[8], regfile[9], regfile[10], regfile[11], 
-                        regfile[12], regfile[13], regfile[14], regfile[15], 
-                        regfile[16], regfile[17], regfile[18], regfile[19], 
-                        regfile[20], regfile[21], regfile[22], regfile[23], 
-                        regfile[24], regfile[25], regfile[26], regfile[27], 
-                        regfile[28], regfile[29], regfile[30], regfile[31], 
-                        regfile[32], regfile[33], regfile[34], regfile[35], 
-                        regfile[36], regfile[37], regfile[38], regfile[39]};
-        init_read_address <= init_write_address;
-        init_write_address <= init_write_address + 1'b1;
-        if (init_write_address == Y_SIZE-1) begin
-            init_done <= 1'b1;
-        end
-    end
-end
+wire                        mode_line;
+
+python_clk python_clk(
+    .mode(mode_line),
+    .mode_signal(regfile[40]));//sensitivity
+
+
+//UI write into BRAM
+// always @(posedge out_stream_aclk) begin
+//     if (periph_resetn) begin
+//         init_write_address <= {Y_WIDTH{1'b0}};
+//         init_done <= 1'b0;
+//     end else if (regfile[41] && !init_done) begin
+//         // Concatenates the whole line from the 40 registers, each 32bits
+//         result_line <= {regfile[0], regfile[1], regfile[2], regfile[3], 
+//                         regfile[4], regfile[5], regfile[6], regfile[7], 
+//                         regfile[8], regfile[9], regfile[10], regfile[11], 
+//                         regfile[12], regfile[13], regfile[14], regfile[15], 
+//                         regfile[16], regfile[17], regfile[18], regfile[19], 
+//                         regfile[20], regfile[21], regfile[22], regfile[23], 
+//                         regfile[24], regfile[25], regfile[26], regfile[27], 
+//                         regfile[28], regfile[29], regfile[30], regfile[31], 
+//                         regfile[32], regfile[33], regfile[34], regfile[35], 
+//                         regfile[36], regfile[37], regfile[38], regfile[39]};
+//         init_read_address <= init_write_address;
+//         init_write_address <= init_write_address + 1'b1;
+//         if (init_write_address == Y_SIZE-1) begin
+//             init_done <= 1'b1;
+//         end
+//     end
+// end
 
 //need to request lolezio send row data from python
 // always @(negedge out_stream_aclk) begin
@@ -258,16 +264,19 @@ end
 // -------------------------------------------------------
 
 
-reg calc_flag = 0;      // Calc flag - INITIALISED HERE
-
 wire [Y_WIDTH-1:0] calc_row_out; // TO line_buffer
-reg  [Y_WIDTH-1:0] calc_row_reg;
+reg  [Y_WIDTH-1:0] calc_row_reg = {Y_WIDTH{1'b0}};
 assign calc_row_out = calc_row_reg;
 
-always @(posedge clk) begin
-    if (calc_flg == 1) begin
+reg temp_mode = 0;
+reg calc_flag = 0;
+
+always @(posedge out_stream_aclk) begin
+    if (temp_mode != mode_line) begin
+        calc_flag <= 1;
         if (valid_set) begin
             if (calc_row_reg == 10'd719) begin
+                temp_mode <= !temp_mode;
                 calc_flag <= 0;
                 calc_row_reg <= {Y_WIDTH{1b'0}};
             end
@@ -281,6 +290,8 @@ always @(posedge clk) begin
     end
 end
 
+
+
 // Interconnect wires between TOP , parrallel_next_state and line buffer
 // _2 is for wires betwenen line buffer and parallel_next_state
 wire                valid_set;
@@ -288,6 +299,7 @@ wire [X_SIZE-1:0]  top;
 wire [X_SIZE-1:0]  middle;
 wire [X_SIZE-1:0]  bottom;
 wire                calc_flag_1;
+assign calc_flag_1 = calc_flag;
 wire                calc_flag_2;
 wire [Y_WIDTH-1:0]  calc_row_2;
 
@@ -315,9 +327,7 @@ line_buffer buffer(
     .calc_flag_in(calc_flag_1),         // FROM line_iterator 
     .valid_set(valid_set),           // TO parallel_next_state AND line_iterator
     .calc_row_out(calc_row_2),  // TO parallel_next_state 
-    .calc_flag_out(calc_flag_2)        // TO parallel_next_state
-);
-
+    .calc_flag_out(calc_flag_2));        // TO parallel_next_state
 parallel_next_state next_state(
     .clk(out_stream_aclk),
     .top_row(top),    // FROM line_buffer
@@ -333,7 +343,7 @@ parallel_next_state next_state(
     .write_en(parallel_next_state_write_en_line));             // !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!! TO BRAM write
 mode_selector selector(
     .clk(out_stream_aclk),
-    .mode(regfile[40]), //PAUSE FLAG
+    .mode(mode_line), //PAUSE FLAG
 
     .line_buffer_fetch_addr(fetch_addr_line),
     .line_buffer_fetch_mem(fetch_mem_line),
@@ -386,20 +396,6 @@ reg [Y_WIDTH-1:0] y_out_address;
 reg  override;
 
 always @(posedge out_stream_aclk) begin
-    //bon's secret back door
-    if(BRAM_B_WE) begin
-        video_out_row <= dout_line_A;
-        override <= 1'b1;
-    end else begin
-        video_out_row <= dout_line_B;
-        override <= 1'b0;
-
-    end
-
-//    if((y==719) && (pause_flag==0)) begin
-//        current_ram_flag=!current_ram_flag;
-//    end
-
     write <= 1'b0;
 
     if(periph_resetn) begin
