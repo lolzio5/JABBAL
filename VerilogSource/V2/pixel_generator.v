@@ -225,7 +225,7 @@ always @(posedge out_stream_aclk) begin
     if (periph_resetn) begin
         init_write_address <= 10'd0;
         init_done <= 1'b0;
-    end else if (init_write_enable) begin
+    end else if (init_write_enable && !init_done) begin
         // Concatenates the whole line from the 40 registers
         result_line <= {regfile[0], regfile[1], regfile[2], regfile[3], 
                         regfile[4], regfile[5], regfile[6], regfile[7], 
@@ -397,3 +397,4 @@ blk_mem_gen_1 blk_ram_B(
                  .ena(1),
                  .wea(init_write_enable));
 endmodule
+ 
