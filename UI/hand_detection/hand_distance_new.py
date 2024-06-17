@@ -16,19 +16,18 @@ done_sending=0
 
 # Initialize TCP server
 server_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-server_socket.bind(('192.168.2.1', 9999))
-server_socket.listen(1) 
+server_socket.bind(('localhost', 9999))
+server_socket.listen(1)
 print("Waiting for a connection...")
 client_socket, client_address = server_socket.accept()
 print(f"Connected to {client_address}")
-print('hope its running')
-cap = cv2.VideoCapture(1)
+
+cap = cv2.VideoCapture(0)
 detector = HandDetector(maxHands=1)
 #classifier = Classifier(r"UI\hand_detection\model_keras\keras_model.h5", r"UI\hand_detection\model_keras\labels.txt")
 label = ["draw","fast","ok","reset","select","start","stop"]
 coordinates=set()
-# matrix=np.zeros((1280,720), dtype=np.bool_)
-matrix=np.zeros((40,32), dtype=np.bool_)
+matrix=np.zeros((1280,720), dtype=np.bool_)
 
 def is_thumbs_up(hand):
     thumb_tip = hand[4][1]  # y-coordinate of thumb tip
@@ -105,7 +104,7 @@ while True:
                         w_end = min(imgResize.shape[1], whiteImage.shape[1])
                         whiteImage[hCenterGap:h_end, 0:w_end] = imgResize[0:(h_end - hCenterGap), 0:w_end]
 
-                cv2.imshow(("White Image"), whiteImage)
+                cv2.imshow(("Zoomed Image"), whiteImage)
                 # prediction, index = classifier.getPrediction(whiteImage)
                 # print(label[index], lmHand)
                 exec_time=time.time()-start
@@ -113,10 +112,17 @@ while True:
                     drawing = False
                     if not done_sending:
                         for alive in coordinates:
-                            matrix[int(alive[0])*2][int(alive[1]*1.5)]=False
+                            matrix[int(alive[0])*2][int(alive[1]*1.5)]=1
                         try:
                             serialized_matrix = pickle.dumps(matrix)
-                            client_socket.send(serialized_matrix)
+                            matrix_size = len(serialized_matrix)
+                            num_chunks = (matrix_size // 4096) + 1
+                            client_socket.send(pickle.dumps(num_chunks))
+                            for i in range(num_chunks):
+                                start = i * 4096
+                                end = start + 4096
+                                chunk = serialized_matrix[start:end]
+                                client_socket.send(chunk)
                             print("Starting grid sent!")
                             done_sending=1
                         except Exception as e:
@@ -127,11 +133,11 @@ while True:
                     if length != 0:
                         if w // length > 6:
                             coordinates.add((lmHand[4][0:2][0], lmHand[4][0:2][1]))
-               # else:
-                  #  if is_hand_open(lmHand):
-                  #      message="P" # Pause
-                  #      pickled_message=pickle.dumps(message)
-                   #     client_socket.send(pickled_message)
+                else:
+                    if (is_hand_open(lmHand) and done_sending):
+                        message="P" # Pause
+                        pickled_message=pickle.dumps(message)
+                        client_socket.send(pickled_message)
 
         cv2.imshow(("Image"), img)
     else:
