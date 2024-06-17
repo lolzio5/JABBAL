@@ -210,21 +210,19 @@ end
 assign pause_flag = regfile[40];
 assign BRAM_B_WE = regfile[42];
 
-//real implementation
-// PAUSE = regfile[40];
-// BRAM_A_WE = regfile[41];
+
 
 
 // Initialises the grid when read_flag is set to high, when data is to be retrieved from the registers and stored in BRAM.
 //wire init_write_enable
 
-//assign init_write_enable = regfile[41];//BRAM_A_WE //set by python to signal data is ready at the end
+//regfile[41];//BRAM_A_WE //set by python to signal data is ready at the end
 
 reg [Y_WIDTH-1:0]           init_write_address;
 reg [Y_WIDTH-1:0]           init_read_address;
 
 reg                 init_done;
-reg [1279:0]        result_line;
+reg [X_SIZE-1:0]        result_line;
 
 always @(posedge out_stream_aclk) begin
     if (periph_resetn) begin
@@ -249,8 +247,9 @@ always @(posedge out_stream_aclk) begin
         end
     end
 end
-//REQUEST LOLEZIO TO SEND ROW NUMBER TO REGISTER TO REG, INSTEAD OF FPGA SELF ADD
-// always @(negedge out_stream_aclk && !s_axi_lite_aclk) begin
+
+//need to request lolezio send row data from python
+// always @(negedge out_stream_aclk) begin
 //     regfile[41] <= 32'b0;
 // end
 
@@ -258,56 +257,110 @@ end
 // ---------------- NEXT STATE CALCULATION ---------------
 // -------------------------------------------------------
 
-/**
-wire [9:0] fetch_addr;
-wire [9:0] calc_row;
-wire [1279:0] fetch_mem;
-wire [1279:0] top;
-wire [1279:0] middle;
-wire [1279:0] bottom;
-wire valid;
 
-always @(posedge out_stream_aclk and pause_flag==0) begin
-    if(current_ram_flag) begin
-         <= dout_line_A;
-    end else begin
-        top_line <= dout_line_B;
-    end
+reg calc_flag = 0;      // Calc flag - INITIALISED HERE
 
-    write <= 1'b0;
+wire [Y_WIDTH-1:0] calc_row_out; // TO line_buffer
+reg  [Y_WIDTH-1:0] calc_row_reg;
+assign calc_row_out = calc_row_reg;
 
-    if(periph_resetn) begin
-        if(ready) begin
-            if(lastx) begin
-                x <= 11'd0;
-                if(lasty) begin
-                    y <= 10'd0;
-                end else begin
-                    y <= y + 1'b1;
-                end
-            end else begin
-                x <= x + 1'b1; 
+always @(posedge clk) begin
+    if (calc_flg == 1) begin
+        if (valid_set) begin
+            if (calc_row_reg == 10'd719) begin
+                calc_flag <= 0;
+                calc_row_reg <= {Y_WIDTH{1b'0}};
             end
-
+            else begin
+                calc_row_reg <= calc_row_reg + 1'b1;
+            end
         end
-    end else begin
-        x <= 11'd0;
-        y <= 10'd0;
+        else begin
+            calc_row_reg <= {Y_WIDTH{1b'0}};
+        end
     end
-
 end
 
+// Interconnect wires between TOP , parrallel_next_state and line buffer
+// _2 is for wires betwenen line buffer and parallel_next_state
+wire                valid_set;
+wire [X_WIDTH-1:0]  top;
+wire [X_WIDTH-1:0]  middle;
+wire [X_WIDTH-1:0]  bottom;
+wire                calc_flag_1;
+wire                calc_flag_2;
+wire [Y_WIDTH-1:0]  calc_row_2;
+
+//BRAM WIRE
+wire [Y_WIDTH-1:0]  fetch_addr_line;
+wire [X_WIDTH-1:0]  fetch_mem_line;
+wire [X_WIDTH-1:0]  
+
+
+
 line_buffer buffer(
-                 .calc_row(calc_row),
-                 .clk(out_stream_aclk),
-                 .fetch_addr(fetch_addr),
-                 .fetch_mem(fetch_mem),
-                 .top(top),
-                 .middle(middle),
-                 .bottom(bottom),
-                 .valid(valid)
+    .clk(out_stream_aclk),
+    .calc_row(calc_row_out), // FROM line iterator 
+
+    // Fetching stuff
+    .fetch_addr(fetch_addr_line), // !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!  TO read BRAM
+    .fetch_mem(fetch_mem_line),   // !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!! FROM read BRAM
+
+    // Buffers
+    .top(top),    // TO parallel_next_state
+    .middle(middle), // TO parallel_next_state
+    .bottom(bottom), // TO parallel_next_state
+    
+    // New
+    .calc_flag_in(calc_flag_1),         // FROM line_iterator 
+    .valid_set(valid_set),           // TO parallel_next_state AND line_iterator
+    .calc_row_out(calc_row_2),  // TO parallel_next_state 
+    .calc_flag_out(calc_flag_2)        // TO parallel_next_state
 );
-**/
+
+parallel_next_state next_state(
+    .clk(out_stream_aclk),
+    .top_row(top),    // FROM line_buffer
+    .middle_row(middle), // FROM line_buffer
+    .bottom_row(bottom), // FROM line_buffer
+    .result(result_line), // TO !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!! BRAM write
+
+    // New
+    .calc_row_in(calc_row_2),    // FROM line_buffer
+    .calc_flg(calc_flag_2),             // FROM line_buffer
+    .valid_set(valid_set),            // FROM line_buffer
+    .write_addr(),    // !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!! TO BRAM write
+    .write_en()             // !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!! TO BRAM write
+);
+
+mode_selector selector(
+    .clk(out_stream_aclk),
+    .mode(reg[40]), //PAUSE FLAG
+
+    .line_buffer_fetch_addr(),
+    .line_buffer_fetch_mem(),
+    .parallel_next_state_result(),
+    .parallel_next_state_write_addr(),
+    .parallel_next_state_write_en(),
+
+    .BRAM_A_addra(y),
+    .BRAM_A_dina(result_line),
+    .BRAM_A_douta(dout_line_A),
+    .BRAM_A_wea(write),
+    .BRAM_A_addrb(y),
+    .BRAM_A_dinb(result_line),
+    .BRAM_A_doutb(dout_line_A2),
+    .BRAM_A_web(write),
+
+    .BRAM_B_addra(y),
+    .BRAM_B_dina(result_line),
+    .BRAM_B_douta(dout_line_B),
+    .BRAM_B_wea(regfile[41]),
+    .BRAM_B_addrb(y),
+    .BRAM_B_dinb(result_line),
+    .BRAM_B_doutb(dout_line_B2),
+    .BRAM_B_web(write)
+);
 
 // -------------------------------------------------------
 // ---------------- OUTPUT LOGIC -------------------------
@@ -316,12 +369,12 @@ line_buffer buffer(
 //BRAM register
 reg [X_SIZE-1:0]    top_line;
 reg [X_SIZE-1:0]    results_line;
-reg             write;
+reg                 write;
 
 assign c = 1'b0;
 
-reg  [X_WIDTH-1:0] x;
-wire [Y_WIDTH-1:0] y;
+reg  [X_WIDTH-1:0]  x;
+wire [Y_WIDTH-1:0]  y;
 
 wire first = (x == 0) & (y==0);
 wire lastx = (x == X_SIZE - 1);
@@ -396,19 +449,35 @@ packer pixel_packer(
                     .out_stream_tdata(out_stream_tdata), .out_stream_tkeep(out_stream_tkeep),
                     .out_stream_tlast(out_stream_tlast), .out_stream_tready(out_stream_tready),
                     .out_stream_tvalid(out_stream_tvalid), .out_stream_tuser(out_stream_tuser) );
+
+
+//all READ port 'a' for line buffer
+//all READ port 'b' for outstream video
 blk_mem_gen_0 blk_ram_A(
-                    .addra(y),
-                    .clka(out_stream_aclk),
-                    .dina(result_line),
-                    .douta(dout_line_A),
-                    .ena(1),
-                    .wea(write));
+                 .addra(y),
+                 .clka(out_stream_aclk),
+                 .dina(result_line),
+                 .douta(dout_line_A),
+                 .ena(1),
+                 .wea(write),
+                 .addrb(y),
+                 .clkb(out_stream_aclk),
+                 .dinb(result_line),
+                 .doutb(dout_line_A2),
+                 .enb(1),
+                 .web(write));
                  
 blk_mem_gen_1 blk_ram_B(
-                    .addra(y),
-                    .clka(out_stream_aclk),
-                    .dina(result_line),
-                    .douta(dout_line_B),
-                    .ena(1),
-                    .wea(regfile[41]));
+                 .addra(y),
+                 .clka(out_stream_aclk),
+                 .dina(result_line),
+                 .douta(dout_line_B),
+                 .ena(1),
+                 .wea(regfile[41]),
+                 .addrb(y),
+                 .clkb(out_stream_aclk),
+                 .dinb(result_line),
+                 .doutb(dout_line_B2),
+                 .enb(1),
+                 .web(write));
 endmodule

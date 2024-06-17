@@ -16,13 +16,13 @@ done_sending=0
 
 # Initialize TCP server
 server_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-server_socket.bind(('localhost', 9999))
+server_socket.bind(('192.168.2.1', 9999))
 server_socket.listen(1)
 print("Waiting for a connection...")
 client_socket, client_address = server_socket.accept()
 print(f"Connected to {client_address}")
 
-cap = cv2.VideoCapture(0)
+cap = cv2.VideoCapture(1)
 detector = HandDetector(maxHands=1)
 #classifier = Classifier(r"UI\hand_detection\model_keras\keras_model.h5", r"UI\hand_detection\model_keras\labels.txt")
 label = ["draw","fast","ok","reset","select","start","stop"]
