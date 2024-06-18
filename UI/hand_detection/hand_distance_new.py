@@ -134,6 +134,7 @@ while True:
 
                 cv2.imshow(("Zoomed Image"), whiteImage)
                 exec_time=time.time()-start
+                # Check if thumbs up is shown and generate initial matrix
                 if is_thumbs_up(lmHand) and exec_time>10:
                     drawing = False
                     if not done_sending:
@@ -159,11 +160,13 @@ while True:
                             done_sending=1
                         except Exception as e:
                             print(f"Error sending matrix: {e}")
+                # Get the coordinates being drawn
                 if drawing:
                     length, info, img = detector.findDistance(lmHand[4][0:2], lmHand[8][0:2], img, color=(255, 0, 255), scale=10)
                     if length != 0:
                         if w // length > 6:
                             coordinates.add((lmHand[4][0:2][0], lmHand[4][0:2][1]))
+                # Check for pause signal
                 else:
                     if (is_hand_open(lmHand) and done_sending):
                         message="P" # Pause
@@ -175,7 +178,3 @@ while True:
         cv2.imshow("Image", img)
     else:
         print("Fail to get frame")
-
-    # Exit on key press
-    key = cv2.waitKey(2)
-    if key == 27:  # Escape key
