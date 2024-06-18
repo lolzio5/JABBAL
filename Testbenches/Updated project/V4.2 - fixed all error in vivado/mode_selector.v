@@ -17,7 +17,7 @@ module mode_selector #(
 
     //ram A
     output  [Y_WIDTH-1:0]   BRAM_A_addra,
-    output  [X_WIDTH-1:0]   BRAM_A_dina,
+    output  [X_SIZE-1:0]   BRAM_A_dina,
     input   [X_SIZE-1:0]    BRAM_A_douta,
     output                  BRAM_A_wea,
     output  [Y_WIDTH-1:0]   BRAM_A_addrb,
@@ -27,7 +27,7 @@ module mode_selector #(
 
     //ram B
     output  [Y_WIDTH-1:0]   BRAM_B_addra,
-    output  [X_WIDTH-1:0]   BRAM_B_dina,
+    output  [X_SIZE-1:0]   BRAM_B_dina,
     input   [X_SIZE-1:0]    BRAM_B_douta,
     output                  BRAM_B_wea,
     output  [Y_WIDTH-1:0]   BRAM_B_addrb,
@@ -39,27 +39,56 @@ module mode_selector #(
 //all READ port 'a' for line buffer
 //all READ port 'b' for outstream video
 
+
+// reg [Y_WIDTH-1:0]   BRAM_A_addra_reg;
+// reg [Y_WIDTH-1:0]   BRAM_A_addrb_reg;
+// reg [X_SIZE-1:0]    line_buffer_fetch_mem_reg;
+// reg [X_SIZE-1:0]    video_out_row_data_reg;
+
+// reg [Y_WIDTH-1:0]   BRAM_B_addra_reg;
+// reg [X_SIZE-1:0]    BRAM_B_dina_reg;
+// reg                 BRAM_B_wea_reg;
+
+// reg [Y_WIDTH-1:0]   BRAM_B_addrb_reg;
+// reg [X_SIZE-1:0]    BRAM_A_dina_reg;
+// reg                 BRAM_A_wea_reg;
+
 //mode 0: RAM_A read, RAM_B write
 
-always @* begin //use always comb
-    if(mode) begin
-        BRAM_A_addra = line_buffer_fetch_addr;
-        BRAM_A_addrb = y;
-        line_buffer_fetch_mem = BRAM_A_douta;
-        topline_out = BRAM_A_doutb;
+assign  BRAM_A_addra = mode ? line_buffer_fetch_addr : parallel_next_state_write_addr;
+assign  BRAM_A_addrb = video_out_row_addr;
+assign  BRAM_B_addrb = video_out_row_addr;
+assign  line_buffer_fetch_mem = mode ? BRAM_A_douta : BRAM_B_douta;
+assign  video_out_row_data = mode ? BRAM_A_doutb : BRAM_B_doutb;
+assign  BRAM_B_addra = mode ? parallel_next_state_write_addr : line_buffer_fetch_addr;
+assign  BRAM_B_dina = parallel_next_state_result;
+assign  BRAM_A_dina = parallel_next_state_result;
+assign  BRAM_B_wea = mode ? parallel_next_state_write_en : 0;
+assign  BRAM_A_wea = mode ? 0 : parallel_next_state_write_en;
 
-        BRAM_B_addra = parallel_next_state_write_addr;
-        BRAM_B_dina = parallel_next_state_result;
-        BRAM_B_wea = parallel_next_state_write_en;
-    end else begin
-        BRAM_B_addra = line_buffer_fetch_addr;
-        BRAM_B_addrb = y;
-        line_buffer_fetch_mem = BRAM_B_douta;
-        topline_out = BRAM_B_doutb;
 
-        BRAM_A_addra = parallel_next_state_write_addr;
-        BRAM_A_dina = parallel_next_state_result;
-        BRAM_A_wea = parallel_next_state_write_en;
-    end
-end
+
+
+
+// always @(*) begin //use always comb
+//     if(mode) begin
+//         BRAM_A_addra = line_buffer_fetch_addr;
+//         BRAM_A_addrb = video_out_row_addr;
+//         line_buffer_fetch_mem = BRAM_A_douta;
+//         video_out_row_data = BRAM_A_doutb;
+
+//         BRAM_B_addra = parallel_next_state_write_addr;
+//         BRAM_B_dina = parallel_next_state_result;
+//         BRAM_B_wea = parallel_next_state_write_en;
+//     end else begin
+//         BRAM_B_addra = line_buffer_fetch_addr;
+//         BRAM_B_addrb = video_out_row_addr;
+//         line_buffer_fetch_mem = BRAM_B_douta;
+//         video_out_row_data = BRAM_B_doutb;
+
+//         BRAM_A_addra = parallel_next_state_write_addr;
+//         BRAM_A_dina = parallel_next_state_result;
+//         BRAM_A_wea = parallel_next_state_write_en;
+//     end
+//end
 endmodule
