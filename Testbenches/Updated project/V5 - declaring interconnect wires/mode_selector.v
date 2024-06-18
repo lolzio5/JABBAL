@@ -66,6 +66,10 @@ assign  BRAM_A_dina = parallel_next_state_result;
 assign  BRAM_B_wea = mode ? parallel_next_state_write_en : 0;
 assign  BRAM_A_wea = mode ? 0 : parallel_next_state_write_en;
 
+assign  BRAM_A_web = 1'b0;
+assign  BRAM_B_web = 1'b0;
+assign BRAM_A_dinb = 1280'b0;
+assign  BRAM_B_dinb  = 1280'b0;
 
 
 
