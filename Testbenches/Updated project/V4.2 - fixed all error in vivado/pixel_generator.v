@@ -307,7 +307,7 @@ wire [Y_WIDTH-1:0]  calc_row_2;
 wire [Y_WIDTH-1:0]  fetch_addr_line;
 wire [X_SIZE-1:0]  fetch_mem_line;
 
-
+wire [X_SIZE-1:0] video_out_row_data_line;
 
 line_buffer buffer(
     .clk(out_stream_aclk),
@@ -351,7 +351,7 @@ mode_selector selector(
     .parallel_next_state_result(parallel_next_state_result_line),
     .parallel_next_state_write_en(parallel_next_state_write_en_line),
     .video_out_row_addr(y),
-    .video_out_row_data(video_out_row),
+    .video_out_row_data(video_out_row_data_line),
 
 
     .BRAM_A_addra(BRAM_A_addra_line),
@@ -377,7 +377,6 @@ mode_selector selector(
 // -------------------------------------------------------
 
 //BRAM register
-reg [X_SIZE-1:0]    video_out_row;
 reg [X_SIZE-1:0]    results_line;
 reg                 write;
 
@@ -419,7 +418,7 @@ always @(posedge out_stream_aclk) begin
 
 end
 
-assign y = (init_done | override)? y_out_address: init_read_address;
+assign y = y_out_address;
 
 wire valid_int = 1'b1;
 wire [4:0] current_reg;
@@ -428,7 +427,7 @@ wire state;
 wire [X_WIDTH-1:0] inverted_x;
 
 assign inverted_x = 11'd1279 - x;
-assign state = video_out_row[inverted_x];
+assign state = video_out_row_data_line[inverted_x];
 
 wire [1279:0] dout_line_A;
 wire [1279:0] dout_line_B;
