@@ -225,6 +225,7 @@ reg [X_SIZE-1:0]            result_line;
 wire                        mode_line;
 
 python_clk python_clk(
+    .clk(out_stream_aclk),
     .mode(mode_line),
     .mode_signal(regfile[40]));//sensitivity
 

@@ -3,8 +3,9 @@ module python_clk(
     input   mode_signal, //sensitivity
 );
 reg      mode = 1'b0;
-always@(*) begin 
-    mode = ~mode;
+
+always@(posedge mode_signal or negedge mode_signal) begin 
+    mode <= ~mode;
 end
 
 endmodule
