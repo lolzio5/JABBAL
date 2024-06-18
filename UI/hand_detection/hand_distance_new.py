@@ -16,13 +16,13 @@ done_sending=0
 
 # Initialize TCP server
 server_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-server_socket.bind(('localhost', 9999))
+server_socket.bind(('192.168.2.1', 9999))
 server_socket.listen(1)
 print("Waiting for a connection...")
 client_socket, client_address = server_socket.accept()
 print(f"Connected to {client_address}")
 
-cap = cv2.VideoCapture(0)
+cap = cv2.VideoCapture(1)
 detector = HandDetector(maxHands=1)
 label = ["draw","fast","ok","reset","select","start","stop"]
 coordinates=set()
@@ -124,6 +124,7 @@ while True:
                         try:
                             serialized_matrix = pickle.dumps(matrix)
                             matrix_size = len(serialized_matrix)
+                            print(matrix)
                             num_chunks = (matrix_size // 4096) + 1
                             client_socket.send(pickle.dumps(num_chunks))
                             for i in range(num_chunks):
@@ -144,6 +145,7 @@ while True:
                 else:
                     if (is_hand_open(lmHand) and done_sending):
                         message="P" # Pause
+                        print(message)
                         pickled_message=pickle.dumps(message)
                         client_socket.send(pickled_message)
 
