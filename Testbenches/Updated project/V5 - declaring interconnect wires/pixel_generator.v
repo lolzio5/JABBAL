@@ -456,9 +456,15 @@ assign state = video_out_row_data_line[inverted_x];
 wire [1279:0] dout_line_A;
 wire [1279:0] dout_line_B;
 
-assign r = state * 8'hCB;
-assign g = state * 8'h41;
-assign b = state * 8'h6B;
+//DEAD - CB0000(DARK RED) ALIVE - CBFFFF(Very light Pale blue)
+assign r = 8'hCB;  
+assign g = state * 8'hFF;
+assign b = state * 8'hFF;
+
+//Used to be DEAD - 0000(Black) ALIVE - CB416B(Reddish pink) 
+// assign r = state * 8'hCB;   
+// assign g = state * 8'h41;
+// assign b = state * 8'h6B;
 
 packer pixel_packer(    
                     .aclk(out_stream_aclk),
