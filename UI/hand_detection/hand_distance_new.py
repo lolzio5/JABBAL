@@ -16,13 +16,13 @@ done_sending=0
 
 # Initialize TCP server
 server_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-server_socket.bind(('192.168.2.1', 9999))
+server_socket.bind(('127.0.0.1', 9999))
 server_socket.listen(1)
 print("Waiting for a connection...")
 client_socket, client_address = server_socket.accept()
 print(f"Connected to {client_address}")
 
-cap = cv2.VideoCapture(1)
+cap = cv2.VideoCapture(0)
 detector = HandDetector(maxHands=1)
 label = ["draw","fast","ok","reset","select","start","stop"]
 coordinates=set()
@@ -108,35 +108,27 @@ while True:
                     drawing = False
                     if not done_sending:
                         for alive in coordinates:
-                            matrix[int(alive[1]*1.5)][int(alive[0]*2)]=1
+                            matrix[min(int(alive[1]*1.5),719)][min(int(alive[0]*2),1279)]=1
                             if (alive[1]+1<720):
-                                matrix[int((alive[1]+1)*1.5)][int(alive[0]*2)]=1
+                                matrix[min(int((alive[1]+1)*1.5),719)][min(int(alive[0]*2), 1279)]=1
                             if (alive[1]+1<720) and (alive[0]+1<1280):
-                                matrix[int((alive[1]+1)*1.5)][int((alive[0]+1)*2)]=1
+                                matrix[min(int((alive[1]+1)*1.5),719)][min(int((alive[0]+1)*2),1279)]=1
                             if (alive[1]+1<720) and (alive[0]-1>-1):
-                                matrix[int((alive[1]+1)*1.5)][int((alive[0]-1)*2)]=1
+                                matrix[min(int((alive[1]+1)*1.5),719)][min(int((alive[0]-1)*2), 1279)]=1
                             if (alive[1]-1>-1):
-                                matrix[int((alive[1]-1)*1.5)][int(alive[0]*2)]=1
+                                matrix[min(int((alive[1]-1)*1.5),719)][min(int(alive[0]*2),1279)]=1
                             if (alive[1]-1>-1) and (alive[0]-1>-1):
-                                matrix[int((alive[1]-1)*1.5)][int((alive[0]-1)*2)]=1
+                                matrix[min(int((alive[1]-1)*1.5),719)][min(int((alive[0]-1)*2),1279)]=1
                             if (alive[1]-1>-1) and (alive[0]+1<1280):
-                                matrix[int((alive[1]-1)*1.5)][int((alive[0]+1)*2)]=1
+                                matrix[min(int((alive[1]-1)*1.5),719)][min(int((alive[0]+1)*2), 1279)]=1
                         try:
-                            serialized_matrix = pickle.dumps(matrix)
-                            matrix_size = len(serialized_matrix)
-                            print(matrix)
-                            num_chunks = (matrix_size // 4096) + 1
-                            client_socket.send(pickle.dumps(num_chunks))
-                            for i in range(num_chunks):
-                                start = i * 4096
-                                end = start + 4096
-                                chunk = serialized_matrix[start:end]
-                                client_socket.send(chunk)
+                            for row in matrix:
+                                serialized_row = pickle.dumps(row)
+                                client_socket.send(serialized_row)
                             print("Starting grid sent!")
                             done_sending=1
                         except Exception as e:
                             print(f"Error sending matrix: {e}")
-
                 if drawing:
                     length, info, img = detector.findDistance(lmHand[4][0:2], lmHand[8][0:2], img, color=(255, 0, 255), scale=10)
                     if length != 0:
