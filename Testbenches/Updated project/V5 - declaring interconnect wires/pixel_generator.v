@@ -304,6 +304,29 @@ assign calc_flag_1 = calc_flag;
 wire                calc_flag_2;
 wire [Y_WIDTH-1:0]  calc_row_2;
 
+wire [X_SIZE-1:0] parallel_next_state_result_line;
+wire [Y_WIDTH:0] parallel_next_state_write_addr_line;
+wire parallel_next_state_write_en_line;
+// Add sizes
+wire [Y_WIDTH-1:0] BRAM_A_addra_line;
+wire [X_SIZE-1:0] BRAM_A_dina_line;
+wire [X_SIZE-1:0] BRAM_A_douta_line;
+wire BRAM_A_wea_line;
+wire [Y_WIDTH-1:0] BRAM_A_addrb_line;
+wire [X_SIZE-1:0] BRAM_A_dinb_line;
+wire [X_SIZE-1:0] BRAM_A_doutb_line;
+wire BRAM_A_web_line;
+
+wire [Y_WIDTH-1:0] BRAM_B_addra_line;
+wire [X_SIZE-1:0] BRAM_B_dina_line;
+wire [X_SIZE-1:0] BRAM_B_douta_line;
+wire BRAM_B_wea_line;
+wire [Y_WIDTH-1:0] BRAM_B_addrb_line;
+wire [X_SIZE-1:0] BRAM_B_dinb_line;
+wire [X_SIZE-1:0] BRAM_B_doutb_line;
+wire BRAM_B_web_line;
+
+
 //BRAM WIRE
 wire [Y_WIDTH-1:0]  fetch_addr_line;
 wire [X_SIZE-1:0]  fetch_mem_line;
@@ -433,9 +456,15 @@ assign state = video_out_row_data_line[inverted_x];
 wire [1279:0] dout_line_A;
 wire [1279:0] dout_line_B;
 
-assign r = state * 8'hCB;
-assign g = state * 8'h41;
-assign b = state * 8'h6B;
+//DEAD - CB0000(DARK RED) ALIVE - CBFFFF(Very light Pale blue)
+assign r = 8'hCB;  
+assign g = state * 8'hFF;
+assign b = state * 8'hFF;
+
+//Used to be DEAD - 0000(Black) ALIVE - CB416B(Reddish pink) 
+// assign r = state * 8'hCB;   
+// assign g = state * 8'h41;
+// assign b = state * 8'h6B;
 
 packer pixel_packer(    
                     .aclk(out_stream_aclk),

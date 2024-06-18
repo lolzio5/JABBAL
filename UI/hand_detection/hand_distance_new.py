@@ -7,12 +7,13 @@ import socket
 import time
 import pickle
 
+# Constants for image processing and control
 offset = 20
 imageHeight = 480
 counter = 0
 drawing = True
-start=time.time()
-done_sending=0
+start = time.time()
+done_sending = 0
 
 # Initialize TCP server
 server_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
@@ -22,13 +23,25 @@ print("Waiting for a connection...")
 client_socket, client_address = server_socket.accept()
 print(f"Connected to {client_address}")
 
-cap = cv2.VideoCapture(0)
+# Capture video from the default camera (usually the first one)
+cap = cv2.VideoCapture(1)
+
+# Initialize hand detector with a maximum of one hand to detect
 detector = HandDetector(maxHands=1)
-label = ["draw","fast","ok","reset","select","start","stop"]
-coordinates=set()
-matrix=np.zeros((720,1280), dtype=np.int8)
+
+# Labels for hand gestures
+label = ["draw", "fast", "ok", "reset", "select", "start", "stop"]
+
+# Set to store coordinates of drawn points
+coordinates = set()
+
+# Matrix to store the hand-drawn grid
+matrix = np.zeros((720, 1280), dtype=np.int8)
 
 def is_thumbs_up(hand):
+    """
+    Function to check if the detected hand is showing a thumbs-up gesture.
+    """
     thumb_tip = hand[4][1]  # y-coordinate of thumb tip
     thumb_ip = hand[3][1]   # y-coordinate of thumb IP joint
     index_tip = hand[8][1]  # y-coordinate of index finger tip
@@ -43,6 +56,9 @@ def is_thumbs_up(hand):
     return False
 
 def is_hand_open(hand):
+    """
+    Function to check if the detected hand is open.
+    """
     # Define the landmark pairs for the fingers
     fingers = [
         (4, 2),  # Thumb: tip to MCP joint
@@ -61,46 +77,60 @@ def is_hand_open(hand):
     return True
 
 while True:
+    # Read a frame from the video capture
     success, img = cap.read()
     if success:
+        # Detect hands in the image
         hands, img = detector.findHands(img, draw=True, flipType=True)
-        whiteImage = np.ones((imageHeight, imageHeight, 3), np.uint8)*255
+        
+        # Create a white image of specified height
+        whiteImage = np.ones((imageHeight, imageHeight, 3), np.uint8) * 255
 
         if hands:
-                hand = hands[0]
-                lmHand = hand["lmList"]
-                x, y, w, h = hand['bbox']
-                imgCrop = img[y-offset:y+h+offset,x-offset:x+w+offset] #no boundary protection
+            # Get landmark list and bounding box of the detected hand
+            hand = hands[0]
+            lmHand = hand["lmList"]
+            x, y, w, h = hand['bbox']
+            
+            # Crop the hand image with some offset
+            imgCrop = img[y-offset:y+h+offset, x-offset:x+w+offset]
+            
+            # Determine the scaling ratio to resize the cropped image
+            if w > h:
+                ratio = imageHeight / w
+            else:
+                ratio = imageHeight / h
 
-                if w > h:
-                    ratio = imageHeight/w
+            if ratio:
+                newWidth = math.ceil(w * ratio)
+                newHeight = math.ceil(h * ratio)
+
+                # Ensure the new dimensions do not exceed the image height
+                if newHeight > imageHeight:
+                    newHeight = imageHeight
+                if newWidth > imageHeight:
+                    newWidth = imageHeight
+
+                # Resize the cropped image if it exists
+                if imgCrop.any():
+                    imgResize = cv2.resize(imgCrop, (newWidth, newHeight))
                 else:
-                    ratio = imageHeight/h
+                    imgResize = imgCrop
 
-                if ratio:
-                    newWidth = math.ceil(w*ratio)
-                    newHeight = math.ceil(h*ratio)
-                    if newHeight> imageHeight:
-                        newHeight = imageHeight
-                    if newWidth> imageHeight:
-                        newWidth = imageHeight
-                    if imgCrop.any():
-                        imgResize = cv2.resize(imgCrop, (newWidth, newHeight))
-                    else:
-                        imgResize = imgCrop
+                # Calculate the gaps to center the resized image on the white background
+                wCenterGap = math.floor((imageHeight - newWidth) / 2)
+                hCenterGap = math.floor((imageHeight - newHeight) / 2)
 
-                    wCenterGap = math.floor((imageHeight - newWidth)/2)
-                    hCenterGap = math.floor((imageHeight - newHeight)/2)
+                # Place the resized image on the white background, centered
+                if wCenterGap > 0:
+                    h_end = min(imgResize.shape[0], whiteImage.shape[0])
+                    w_end = min(imgResize.shape[1] + wCenterGap, whiteImage.shape[1])
+                    whiteImage[0:h_end, wCenterGap:w_end] = imgResize[0:h_end, 0:(w_end - wCenterGap)]
 
-                    if wCenterGap > 0:
-                        h_end = min(imgResize.shape[0], whiteImage.shape[0])
-                        w_end = min(imgResize.shape[1] + wCenterGap, whiteImage.shape[1])
-                        whiteImage[0:h_end, wCenterGap:w_end] = imgResize[0:h_end, 0:(w_end - wCenterGap)]
-
-                    if hCenterGap > 0:
-                        h_end = min(imgResize.shape[0] + hCenterGap, whiteImage.shape[0])
-                        w_end = min(imgResize.shape[1], whiteImage.shape[1])
-                        whiteImage[hCenterGap:h_end, 0:w_end] = imgResize[0:(h_end - hCenterGap), 0:w_end]
+                if hCenterGap > 0:
+                    h_end = min(imgResize.shape[0] + hCenterGap, whiteImage.shape[0])
+                    w_end = min(imgResize.shape[1], whiteImage.shape[1])
+                    whiteImage[hCenterGap:h_end, 0:w_end] = imgResize[0:(h_end - hCenterGap), 0:w_end]
 
                 cv2.imshow(("Zoomed Image"), whiteImage)
                 exec_time=time.time()-start
@@ -141,7 +171,11 @@ while True:
                         pickled_message=pickle.dumps(message)
                         client_socket.send(pickled_message)
 
-        cv2.imshow(("Image"), img)
+        # Display the original image with hand detection
+        cv2.imshow("Image", img)
     else:
-        print("fail to get frame")
+        print("Fail to get frame")
+
+    # Exit on key press
     key = cv2.waitKey(2)
+    if key == 27:  # Escape key
