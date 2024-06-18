@@ -24,10 +24,9 @@ print(f"Connected to {client_address}")
 
 cap = cv2.VideoCapture(0)
 detector = HandDetector(maxHands=1)
-#classifier = Classifier(r"UI\hand_detection\model_keras\keras_model.h5", r"UI\hand_detection\model_keras\labels.txt")
 label = ["draw","fast","ok","reset","select","start","stop"]
 coordinates=set()
-matrix=np.zeros((1280,720), dtype=np.bool_)
+matrix=np.zeros((720,1280), dtype=np.int8)
 
 def is_thumbs_up(hand):
     thumb_tip = hand[4][1]  # y-coordinate of thumb tip
@@ -64,7 +63,6 @@ def is_hand_open(hand):
 while True:
     success, img = cap.read()
     if success:
-        #img = cv2.flip(img, 1)
         hands, img = detector.findHands(img, draw=True, flipType=True)
         whiteImage = np.ones((imageHeight, imageHeight, 3), np.uint8)*255
 
@@ -73,7 +71,6 @@ while True:
                 lmHand = hand["lmList"]
                 x, y, w, h = hand['bbox']
                 imgCrop = img[y-offset:y+h+offset,x-offset:x+w+offset] #no boundary protection
-                # cv2.imshow("ImageCropped", imgCrop)
 
                 if w > h:
                     ratio = imageHeight/w
@@ -89,10 +86,11 @@ while True:
                         newWidth = imageHeight
                     if imgCrop.any():
                         imgResize = cv2.resize(imgCrop, (newWidth, newHeight))
+                    else:
+                        imgResize = imgCrop
 
                     wCenterGap = math.floor((imageHeight - newWidth)/2)
                     hCenterGap = math.floor((imageHeight - newHeight)/2)
-                    # print("W: ",newWidth," H: ", newHeight, " imageHeight: ",imageHeight, " hCenterGap: ", hCenterGap, " wCenterGap: ", wCenterGap)
 
                     if wCenterGap > 0:
                         h_end = min(imgResize.shape[0], whiteImage.shape[0])
@@ -105,14 +103,24 @@ while True:
                         whiteImage[hCenterGap:h_end, 0:w_end] = imgResize[0:(h_end - hCenterGap), 0:w_end]
 
                 cv2.imshow(("Zoomed Image"), whiteImage)
-                # prediction, index = classifier.getPrediction(whiteImage)
-                # print(label[index], lmHand)
                 exec_time=time.time()-start
                 if is_thumbs_up(lmHand) and exec_time>10:
                     drawing = False
                     if not done_sending:
                         for alive in coordinates:
-                            matrix[int(alive[0])*2][int(alive[1]*1.5)]=1
+                            matrix[int(alive[1]*1.5)][int(alive[0]*2)]=1
+                            if (alive[1]+1<720):
+                                matrix[int((alive[1]+1)*1.5)][int(alive[0]*2)]=1
+                            if (alive[1]+1<720) and (alive[0]+1<1280):
+                                matrix[int((alive[1]+1)*1.5)][int((alive[0]+1)*2)]=1
+                            if (alive[1]+1<720) and (alive[0]-1>-1):
+                                matrix[int((alive[1]+1)*1.5)][int((alive[0]-1)*2)]=1
+                            if (alive[1]-1>-1):
+                                matrix[int((alive[1]-1)*1.5)][int(alive[0]*2)]=1
+                            if (alive[1]-1>-1) and (alive[0]-1>-1):
+                                matrix[int((alive[1]-1)*1.5)][int((alive[0]-1)*2)]=1
+                            if (alive[1]-1>-1) and (alive[0]+1<1280):
+                                matrix[int((alive[1]-1)*1.5)][int((alive[0]+1)*2)]=1
                         try:
                             serialized_matrix = pickle.dumps(matrix)
                             matrix_size = len(serialized_matrix)
@@ -143,10 +151,3 @@ while True:
     else:
         print("fail to get frame")
     key = cv2.waitKey(2)
-
-    # if key == ord("s"):
-    #     print(cv2.imwrite(f'{folder_path}/Image_{time.time()}.jpg', whiteImage))
-    #     #print(cv2.imwrite('Image_{time.time()}.jpg', img))
-
-    #     counter += 1
-    #     print(counter)
