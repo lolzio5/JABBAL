@@ -63,9 +63,8 @@ assign  video_out_row_data = mode ? BRAM_A_doutb : BRAM_B_doutb;
 assign  BRAM_B_addra = mode ? parallel_next_state_write_addr : line_buffer_fetch_addr;
 assign  BRAM_B_dina = parallel_next_state_result;
 assign  BRAM_A_dina = parallel_next_state_result;
-assign  BRAM_B_wea = mode ? parallel_next_state_write_en : 0;
-assign  BRAM_A_wea = mode ? 0 : parallel_next_state_write_en;
-
+assign  BRAM_B_wea = mode ? 1 : 0;   // assign  BRAM_B_wea = mode ? parallel_next_state_write_en : 0;
+assign  BRAM_A_wea = mode ? 0 : 1;   // assign  BRAM_A_wea = mode ? 0 : parallel_next_state_write_en;
 assign  BRAM_A_web = 1'b0;
 assign  BRAM_B_web = 1'b0;
 assign BRAM_A_dinb = 1280'b0;

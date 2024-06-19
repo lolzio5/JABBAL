@@ -17,14 +17,14 @@ done_sending = 0
 
 # Initialize TCP server
 server_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-server_socket.bind(('127.0.0.1', 9999))
+server_socket.bind(('192.168.2.1', 9999))
 server_socket.listen(1)
 print("Waiting for a connection...")
 client_socket, client_address = server_socket.accept()
 print(f"Connected to {client_address}")
 
 # Capture video from the default camera (usually the first one)
-cap = cv2.VideoCapture(1)
+cap = cv2.VideoCapture(0)
 
 # Initialize hand detector with a maximum of one hand to detect
 detector = HandDetector(maxHands=1)
