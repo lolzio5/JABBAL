@@ -81,7 +81,7 @@ always @(posedge clk) begin
         // Cleaning up
         valid_reg <= 1; 
         temp_fetch_counter <= 0;
-        fetch_addr_reg <= 0;
+        fetch_addr_reg <= 0;    
     end
     
     // Standard case
