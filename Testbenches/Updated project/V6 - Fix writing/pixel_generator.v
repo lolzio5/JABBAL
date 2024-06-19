@@ -404,8 +404,6 @@ mode_selector selector(
 reg [X_SIZE-1:0]    results_line;
 reg                 write;
 
-assign c = 1'b0;
-
 reg  [X_WIDTH-1:0]  x;
 wire [Y_WIDTH-1:0]  y;
 
