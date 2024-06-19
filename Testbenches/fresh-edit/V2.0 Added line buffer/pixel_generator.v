@@ -237,6 +237,8 @@ wire [1279:0] dout_line_A2;
 wire [1279:0] dout_line_B;
 wire [1279:0] dout_line_B2;
 
+wire [Y_WIDTH-1:0]  fetch_addr_line;
+wire [X_SIZE-1:0]  fetch_mem_line;
 
 assign r = 8'hCB;
 assign g = state * 8'h41;
@@ -252,7 +254,7 @@ packer pixel_packer(
                         .out_stream_tvalid(out_stream_tvalid), .out_stream_tuser(out_stream_tuser) );
                         
 blk_mem_gen_0 blk_ram_A(
-                 .addra(y),
+                 .addra(fetch_addr_line),
                  .clka(out_stream_aclk),
                  .dina(results_line),
                  .douta(dout_line_A),
@@ -278,6 +280,25 @@ blk_mem_gen_1 blk_ram_B(
                  .doutb(dout_line_B2),
                  .enb(1),
                  .web(write));
+
+line_buffer buffer(
+    .clk(out_stream_aclk),
+    .calc_row(y), // FROM line iterator `
+
+    // Fetching stuff
+    .fetch_addr(fetch_addr_line), // !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!  TO read BRAM
+    .fetch_mem(fetch_mem_line),   // !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!! FROM read BRAM
+
+    // Buffers
+    .top(top),    // TO parallel_next_state
+    .middle(middle), // TO parallel_next_state
+    .bottom(bottom), // TO parallel_next_state
+    
+    // New
+    .calc_flag_in(calc_flag_1),         // FROM line_iterator 
+    .valid_set(valid_set),           // TO parallel_next_state AND line_iterator
+    .calc_row_out(calc_row_2),  // TO parallel_next_state 
+    .calc_flag_out(calc_flag_2));        // TO parallel_next_state
 
 
 
