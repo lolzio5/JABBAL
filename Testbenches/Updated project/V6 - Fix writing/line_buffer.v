@@ -18,7 +18,7 @@ module line_buffer(
     output calc_flag_out        // TO parallel_next_state
 );
 
-reg calc_row_out_reg;
+reg [9:0] calc_row_out_reg;
 assign calc_row_out = calc_row_out_reg;
 
 reg calc_flag_out_reg;
