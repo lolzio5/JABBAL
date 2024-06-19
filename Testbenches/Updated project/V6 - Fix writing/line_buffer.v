@@ -72,6 +72,15 @@ always @(posedge clk) begin
             temp_fetch_counter <= 2'd0; 
         end
     end
+    // Special case - one before last line 
+    else if (calc_row == 10'd718) begin
+        line_1 <= line_2;
+        line_2 <= line_3;
+        line_3 <= fetch_mem;
+        
+        valid_reg <= 1;
+        //Can't fetch memory for next line so no diff fetch adrr loaded here 
+    end
     // Special case - last line
     else if (calc_row == 10'd719) begin
         line_1 <= line_2;
