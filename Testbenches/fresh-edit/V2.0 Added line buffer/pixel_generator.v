@@ -281,9 +281,44 @@ blk_mem_gen_1 blk_ram_B(
                  .enb(1),
                  .web(write));
 
+python_clk python_clk(
+    .clk(out_stream_aclk),
+    .mode(mode_line),
+    .mode_signal(regfile[40]));//sensitivity
+
+
+reg temp_mode = 0;
+reg calc_flag = 0;
+
+wire [Y_WIDTH-1:0] calc_row_out; // TO line_buffer
+reg  [Y_WIDTH-1:0] calc_row_reg = {Y_WIDTH{1'b0}};
+assign calc_row_out = calc_row_reg;
+
+
+always @(posedge out_stream_aclk) begin
+    if (temp_mode != mode_line) begin
+        calc_flag <= 1;
+        if (valid_set) begin
+            if (calc_row_reg == 10'd719) begin //end case
+                temp_mode <= !temp_mode;
+                calc_flag <= 0;
+                calc_row_reg <= {Y_WIDTH{1'b0}};
+            end else begin
+                calc_row_reg <= calc_row_reg + 1'b1;
+            end
+        end else begin
+            calc_row_reg <= {Y_WIDTH{1'b0}};
+        end
+    end
+end
+
+//valid set never 
+//why need valid set
+
+
 line_buffer buffer(
     .clk(out_stream_aclk),
-    .calc_row(y), // FROM line iterator `
+    .calc_row(calc_row_out), // FROM line iterator `
 
     // Fetching stuff
     .fetch_addr(fetch_addr_line), // !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!  TO read BRAM
