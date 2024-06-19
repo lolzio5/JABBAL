@@ -140,18 +140,12 @@ while True:
                     if not done_sending:
                         for alive in coordinates:
                             matrix[min(int(alive[1]*1.5),719)][min(int(alive[0]*2),1279)]=1
-                            if (alive[1]+1<720):
-                                matrix[min(int((alive[1]+1)*1.5),719)][min(int(alive[0]*2), 1279)]=1
-                            if (alive[1]+1<720) and (alive[0]+1<1280):
-                                matrix[min(int((alive[1]+1)*1.5),719)][min(int((alive[0]+1)*2),1279)]=1
-                            if (alive[1]+1<720) and (alive[0]-1>-1):
-                                matrix[min(int((alive[1]+1)*1.5),719)][min(int((alive[0]-1)*2), 1279)]=1
-                            if (alive[1]-1>-1):
-                                matrix[min(int((alive[1]-1)*1.5),719)][min(int(alive[0]*2),1279)]=1
-                            if (alive[1]-1>-1) and (alive[0]-1>-1):
-                                matrix[min(int((alive[1]-1)*1.5),719)][min(int((alive[0]-1)*2),1279)]=1
-                            if (alive[1]-1>-1) and (alive[0]+1<1280):
-                                matrix[min(int((alive[1]-1)*1.5),719)][min(int((alive[0]+1)*2), 1279)]=1
+                            matrix[min(int(alive[1]*1.5)+1,719)][min(int(alive[0]*2), 1279)]=1
+                            matrix[min(int(alive[1]*1.5)+1,719)][min(int(alive[0]*2)+1,1279)]=1
+                            matrix[min(int(alive[1]*1.5)+1,719)][min(int(alive[0]*2)-1, 1279)]=1
+                            matrix[min(int(alive[1]*1.5)-1,719)][min(int(alive[0]*2),1279)]=1
+                            matrix[min(int(alive[1]*1.5)-1,719)][min(int(alive[0]*2)-1,1279)]=1
+                            matrix[min(int(alive[1]*1.5)-1,719)][min(int(alive[0]*2)+1, 1279)]=1
                         try:
                             for row in matrix:
                                 serialized_row = pickle.dumps(row)

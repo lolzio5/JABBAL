@@ -222,7 +222,7 @@ reg                         init_done = 1'b0;
 reg [X_SIZE-1:0]            result_line;
 
 wire                        mode_line;
-reg                        write_enable = 1'b1;
+reg                         write_enable;
 
 /**
 python_clk python_clk(
@@ -232,7 +232,8 @@ python_clk python_clk(
 
 //UI write into BRAM
 always @(posedge out_stream_aclk) begin
-    if (regfile[40]) begin
+    if (regfile[40][0]==1) begin
+        write_enable <=1;
         // Concatenates the whole line from the 40 registers, each 32bits
         result_line <= {regfile[0], regfile[1], regfile[2], regfile[3], 
                         regfile[4], regfile[5], regfile[6], regfile[7], 
@@ -244,7 +245,7 @@ always @(posedge out_stream_aclk) begin
                         regfile[28], regfile[29], regfile[30], regfile[31], 
                         regfile[32], regfile[33], regfile[34], regfile[35], 
                         regfile[36], regfile[37], regfile[38], regfile[39]};
-        init_write_address <= regfile[42];
+        init_write_address <= regfile[42][Y_WIDTH-1:0];
         if (init_write_address == Y_SIZE-1) begin
             init_done <= 1'b1;
             write_enable<=1'b0;
@@ -252,139 +253,22 @@ always @(posedge out_stream_aclk) begin
     end
 end
 
-//need to request lolezio send row data from python
-// always @(negedge out_stream_aclk) begin
-//     regfile[41] <= 32'b0;
-// end
-
-// -------------------------------------------------------
-// ---------------- NEXT STATE CALCULATION ---------------
-// -------------------------------------------------------
-/**
-
-wire [Y_WIDTH-1:0] calc_row_out; // TO line_buffer
-reg  [Y_WIDTH-1:0] calc_row_reg = {Y_WIDTH{1'b0}};
-assign calc_row_out = calc_row_reg;
-
-reg temp_mode = 0;
-reg calc_flag = 0;
-
-always @(posedge out_stream_aclk) begin
-    if (temp_mode != mode_line) begin
-        calc_flag <= 1;
-        if (valid_set) begin
-            if (calc_row_reg == 10'd719) begin
-                temp_mode <= !temp_mode;
-                calc_flag <= 0;
-                calc_row_reg <= {Y_WIDTH{1'b0}};
-            end
-            else begin
-                calc_row_reg <= calc_row_reg + 1'b1;
-            end
-        end
-        else begin
-            calc_row_reg <= {Y_WIDTH{1'b0}};
-        end
-    end
-end
-
-
-
-// Interconnect wires between TOP , parrallel_next_state and line buffer
-// _2 is for wires betwenen line buffer and parallel_next_state
-wire                valid_set;
-wire [X_SIZE-1:0]  top;
-wire [X_SIZE-1:0]  middle;
-wire [X_SIZE-1:0]  bottom;
-wire                calc_flag_1;
-assign calc_flag_1 = calc_flag;
-wire                calc_flag_2;
-wire [Y_WIDTH-1:0]  calc_row_2;
-
-//BRAM WIRE
-wire [Y_WIDTH-1:0]  fetch_addr_line;
-wire [X_SIZE-1:0]  fetch_mem_line;
-
-
-
-line_buffer buffer(
-    .clk(out_stream_aclk),
-    .calc_row(calc_row_out), // FROM line iterator `
-
-    // Fetching stuff
-    .fetch_addr(fetch_addr_line), // !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!  TO read BRAM
-    .fetch_mem(fetch_mem_line),   // !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!! FROM read BRAM
-
-    // Buffers
-    .top(top),    // TO parallel_next_state
-    .middle(middle), // TO parallel_next_state
-    .bottom(bottom), // TO parallel_next_state
-    
-    // New
-    .calc_flag_in(calc_flag_1),         // FROM line_iterator 
-    .valid_set(valid_set),           // TO parallel_next_state AND line_iterator
-    .calc_row_out(calc_row_2),  // TO parallel_next_state 
-    .calc_flag_out(calc_flag_2));        // TO parallel_next_state
-
-parallel_next_state next_state(
-    .clk(out_stream_aclk),
-    .top_row(top),    // FROM line_buffer
-    .middle_row(middle), // FROM line_buffer
-    .bottom_row(bottom), // FROM line_buffer
-    .result(parallel_next_state_result_line), // TO !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!! BRAM write
-
-    // New
-    .calc_row_in(calc_row_2),    // FROM line_buffer
-    .calc_flg(calc_flag_2),             // FROM line_buffer
-    .valid_set(valid_set),            // FROM line_buffer
-    .write_addr(parallel_next_state_write_addr_line),    // !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!! TO BRAM write
-    .write_en(parallel_next_state_write_en_line));             // !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!! TO BRAM write
-mode_selector selector(
-    .clk(out_stream_aclk),
-    .mode(mode_line), //PAUSE FLAG
-
-    .line_buffer_fetch_addr(fetch_addr_line),
-    .line_buffer_fetch_mem(fetch_mem_line),
-    .parallel_next_state_write_addr(parallel_next_state_write_addr_line),
-    .parallel_next_state_result(parallel_next_state_result_line),
-    .parallel_next_state_write_en(parallel_next_state_write_en_line),
-    .video_out_row_addr(y),
-    .video_out_row_data(video_out_row),
-
-
-    .BRAM_A_addra(BRAM_A_addra_line),
-    .BRAM_A_dina(BRAM_A_dina_line),
-    .BRAM_A_douta(BRAM_A_douta_line),
-    .BRAM_A_wea(BRAM_A_wea_line),
-    .BRAM_A_addrb(BRAM_A_addrb_line),
-    .BRAM_A_dinb(BRAM_A_dinb_line),
-    .BRAM_A_doutb(BRAM_A_doutb_line),
-    .BRAM_A_web(BRAM_A_web_line),
-
-    .BRAM_B_addra(BRAM_B_addra_line),
-    .BRAM_B_dina(BRAM_B_dina_line),
-    .BRAM_B_douta(BRAM_B_douta_line),
-    .BRAM_B_wea(BRAM_B_wea_line),
-    .BRAM_B_addrb(BRAM_B_addrb_line),
-    .BRAM_B_dinb(BRAM_B_dinb_line),
-    .BRAM_B_doutb(BRAM_B_doutb_line),
-    .BRAM_B_web(BRAM_B_web_line));
-
-**/
 
 // -------------------------------------------------------
 // ---------------- OUTPUT LOGIC -------------------------
 // -------------------------------------------------------
 
 //BRAM register
-wire [X_SIZE-1:0]    video_out_row;
-reg [X_SIZE-1:0]    results_line;
-reg                 write;
+reg [X_SIZE-1:0]    video_out_row;
+reg [X_SIZE-1:0]     results_line;
+reg                  write;
+
+wire [X_SIZE-1:0]    ram_output;
 
 assign c = 1'b0;
 
 reg  [X_WIDTH-1:0]  x;
-wire [Y_WIDTH-1:0]  y;
+reg [Y_WIDTH-1:0]  y;
 
 wire first = (x == 0) & (y==0);
 wire lastx = (x == X_SIZE - 1);
@@ -396,16 +280,17 @@ reg [Y_WIDTH-1:0] y_out_address;
 reg  override;
 
 always @(posedge out_stream_aclk) begin
+    video_out_row<=ram_output;
     write <= 1'b0;
 
     if(periph_resetn) begin
         if(ready) begin
             if(lastx) begin
-                x <= {X_WIDTH{1'b0}};
+                x <= 11'd0;
                 if(lasty) begin
-                    y_out_address <= {Y_WIDTH{1'b0}};
+                    y <= 10'd0;
                 end else begin
-                    y_out_address <= y_out_address + 1'b1;
+                    y <= y + 1'b1;
                 end
             end else begin
                 x <= x + 1'b1; 
@@ -413,10 +298,9 @@ always @(posedge out_stream_aclk) begin
 
         end
     end else begin
-        x <= {X_WIDTH{1'b0}};
-        y_out_address <= {Y_WIDTH{1'b0}};
+        x <= 11'd0;
+        y <= 10'd0;
     end
-
 end
 
 wire valid_int = 1'b1;
@@ -455,13 +339,11 @@ blk_mem_gen_0 blk_ram_A(
                  .douta(BRAM_A_douta_line),
                  .ena(1),
                  .wea(write_enable),
-                 .addrb(y_out_address),
+                 .addrb(y),
                  .clkb(out_stream_aclk),
                  .dinb(BRAM_A_dinb_line),
-                 .doutb(video_out_row),
+                 .doutb(ram_output),
                  .enb(1),
                  .web(0));                 
 
-//all READ port 'a' for line buffer
-//all READ port 'b' for outstream video
 endmodule
