@@ -18,7 +18,7 @@ module line_buffer(
     output calc_flag_out        // TO parallel_next_state
 );
 
-reg calc_row_out_reg;
+reg [9:0] calc_row_out_reg;
 assign calc_row_out = calc_row_out_reg;
 
 reg calc_flag_out_reg;
@@ -71,6 +71,15 @@ always @(posedge clk) begin
             valid_reg <= 1;
             temp_fetch_counter <= 2'd0; 
         end
+    end
+    // Special case - one before last line 
+    else if (calc_row == 10'd718) begin
+        line_1 <= line_2;
+        line_2 <= line_3;
+        line_3 <= fetch_mem;
+        
+        valid_reg <= 1;
+        //Can't fetch memory for next line so no diff fetch adrr loaded here 
     end
     // Special case - last line
     else if (calc_row == 10'd719) begin
