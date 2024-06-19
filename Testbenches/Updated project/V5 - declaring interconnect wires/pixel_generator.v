@@ -456,6 +456,7 @@ assign state = video_out_row_data_line[inverted_x];
 wire [1279:0] dout_line_A;
 wire [1279:0] dout_line_B;
 
+wire [7:0] r, g, b;
 //DEAD - CB0000(DARK RED) ALIVE - CBFFFF(Very light Pale blue)
 assign r = 8'hCB;  
 assign g = state * 8'hFF;
