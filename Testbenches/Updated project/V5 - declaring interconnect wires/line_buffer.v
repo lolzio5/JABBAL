@@ -57,7 +57,7 @@ always @(posedge clk) begin
             valid_reg <= 0;
             temp_fetch_counter <= 2'd1;
         end
-        if (temp_fetch_counter <= 2'd1) begin
+        else if (temp_fetch_counter == 2'd1) begin
             line_2 <= fetch_mem;
             fetch_addr_reg <= calc_row + 1;     
 
@@ -65,7 +65,7 @@ always @(posedge clk) begin
             temp_fetch_counter <= 2'd2;
             
         end
-        if (temp_fetch_counter <= 2'd2) begin
+        else if (temp_fetch_counter == 2'd2) begin
             line_3 <= fetch_mem;
             fetch_addr_reg <= calc_row + 10'd2;   // This sets up the standard case  
             valid_reg <= 1;
