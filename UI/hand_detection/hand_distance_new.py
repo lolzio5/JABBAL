@@ -24,7 +24,7 @@ client_socket, client_address = server_socket.accept()
 print(f"Connected to {client_address}")
 
 # Capture video from the default camera (usually the first one)
-cap = cv2.VideoCapture(0)
+cap = cv2.VideoCapture(1)
 
 # Initialize hand detector with a maximum of one hand to detect
 detector = HandDetector(maxHands=1)

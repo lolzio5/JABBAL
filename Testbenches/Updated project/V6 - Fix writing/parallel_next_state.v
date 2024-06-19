@@ -1,5 +1,5 @@
 module parallel_next_state #(
-    parameter row_length = 1280;
+    parameter row_length = 1280
 ) (
     input wire clk,
     input wire [row_length-1:0] top_row,    // FROM line_buffer
