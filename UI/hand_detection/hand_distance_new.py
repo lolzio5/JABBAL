@@ -178,3 +178,4 @@ while True:
         cv2.imshow("Image", img)
     else:
         print("Fail to get frame")
+    key = cv2.waitKey(2)
