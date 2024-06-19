@@ -216,13 +216,13 @@ end
 
 //regfile[41];//BRAM_A_WE //set by python to signal data is ready at the end
 
-reg [Y_WIDTH-1:0]           init_write_address;
+reg [Y_WIDTH-1:0]           init_write_address = {Y_WIDTH{1'b0}};
 
-reg                         init_done;
+reg                         init_done = 1'b0;
 reg [X_SIZE-1:0]            result_line;
 
 wire                        mode_line;
-reg                        write_enable;
+reg                        write_enable = 1'b1;
 
 /**
 python_clk python_clk(
@@ -232,11 +232,7 @@ python_clk python_clk(
 
 //UI write into BRAM
 always @(posedge out_stream_aclk) begin
-    if (periph_resetn) begin
-        init_write_address <= {Y_WIDTH{1'b0}};
-        init_done <= 1'b0;
-        write_enable<=1;
-    end else if (regfile[40] && !init_done) begin
+    if (regfile[40]) begin
         // Concatenates the whole line from the 40 registers, each 32bits
         result_line <= {regfile[0], regfile[1], regfile[2], regfile[3], 
                         regfile[4], regfile[5], regfile[6], regfile[7], 
@@ -248,10 +244,10 @@ always @(posedge out_stream_aclk) begin
                         regfile[28], regfile[29], regfile[30], regfile[31], 
                         regfile[32], regfile[33], regfile[34], regfile[35], 
                         regfile[36], regfile[37], regfile[38], regfile[39]};
-        init_write_address <= init_write_address + 1'b1;
+        init_write_address <= regfile[42];
         if (init_write_address == Y_SIZE-1) begin
             init_done <= 1'b1;
-            write_enable<=0;
+            write_enable<=1'b0;
         end
     end
 end
@@ -402,7 +398,7 @@ reg  override;
 always @(posedge out_stream_aclk) begin
     write <= 1'b0;
 
-    if(periph_resetn && init_done) begin
+    if(periph_resetn) begin
         if(ready) begin
             if(lastx) begin
                 x <= {X_WIDTH{1'b0}};
