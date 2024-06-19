@@ -217,43 +217,44 @@ end
 //regfile[41];//BRAM_A_WE //set by python to signal data is ready at the end
 
 reg [Y_WIDTH-1:0]           init_write_address;
-reg [Y_WIDTH-1:0]           init_read_address;
 
 reg                         init_done;
 reg [X_SIZE-1:0]            result_line;
 
 wire                        mode_line;
+reg                        write_enable;
 
+/**
 python_clk python_clk(
-    .clk(out_stream_aclk),
     .mode(mode_line),
     .mode_signal(regfile[40]));//sensitivity
-
+**/
 
 //UI write into BRAM
-// always @(posedge out_stream_aclk) begin
-//     if (periph_resetn) begin
-//         init_write_address <= {Y_WIDTH{1'b0}};
-//         init_done <= 1'b0;
-//     end else if (regfile[41] && !init_done) begin
-//         // Concatenates the whole line from the 40 registers, each 32bits
-//         result_line <= {regfile[0], regfile[1], regfile[2], regfile[3], 
-//                         regfile[4], regfile[5], regfile[6], regfile[7], 
-//                         regfile[8], regfile[9], regfile[10], regfile[11], 
-//                         regfile[12], regfile[13], regfile[14], regfile[15], 
-//                         regfile[16], regfile[17], regfile[18], regfile[19], 
-//                         regfile[20], regfile[21], regfile[22], regfile[23], 
-//                         regfile[24], regfile[25], regfile[26], regfile[27], 
-//                         regfile[28], regfile[29], regfile[30], regfile[31], 
-//                         regfile[32], regfile[33], regfile[34], regfile[35], 
-//                         regfile[36], regfile[37], regfile[38], regfile[39]};
-//         init_read_address <= init_write_address;
-//         init_write_address <= init_write_address + 1'b1;
-//         if (init_write_address == Y_SIZE-1) begin
-//             init_done <= 1'b1;
-//         end
-//     end
-// end
+always @(posedge out_stream_aclk) begin
+    if (periph_resetn) begin
+        init_write_address <= {Y_WIDTH{1'b0}};
+        init_done <= 1'b0;
+        write_enable<=1;
+    end else if (regfile[40] && !init_done) begin
+        // Concatenates the whole line from the 40 registers, each 32bits
+        result_line <= {regfile[0], regfile[1], regfile[2], regfile[3], 
+                        regfile[4], regfile[5], regfile[6], regfile[7], 
+                        regfile[8], regfile[9], regfile[10], regfile[11], 
+                        regfile[12], regfile[13], regfile[14], regfile[15], 
+                        regfile[16], regfile[17], regfile[18], regfile[19], 
+                        regfile[20], regfile[21], regfile[22], regfile[23], 
+                        regfile[24], regfile[25], regfile[26], regfile[27], 
+                        regfile[28], regfile[29], regfile[30], regfile[31], 
+                        regfile[32], regfile[33], regfile[34], regfile[35], 
+                        regfile[36], regfile[37], regfile[38], regfile[39]};
+        init_write_address <= init_write_address + 1'b1;
+        if (init_write_address == Y_SIZE-1) begin
+            init_done <= 1'b1;
+            write_enable<=0;
+        end
+    end
+end
 
 //need to request lolezio send row data from python
 // always @(negedge out_stream_aclk) begin
@@ -263,7 +264,7 @@ python_clk python_clk(
 // -------------------------------------------------------
 // ---------------- NEXT STATE CALCULATION ---------------
 // -------------------------------------------------------
-
+/**
 
 wire [Y_WIDTH-1:0] calc_row_out; // TO line_buffer
 reg  [Y_WIDTH-1:0] calc_row_reg = {Y_WIDTH{1'b0}};
@@ -304,34 +305,11 @@ assign calc_flag_1 = calc_flag;
 wire                calc_flag_2;
 wire [Y_WIDTH-1:0]  calc_row_2;
 
-wire [X_SIZE-1:0] parallel_next_state_result_line;
-wire [Y_WIDTH:0] parallel_next_state_write_addr_line;
-wire parallel_next_state_write_en_line;
-// Add sizes
-wire [Y_WIDTH-1:0] BRAM_A_addra_line;
-wire [X_SIZE-1:0] BRAM_A_dina_line;
-wire [X_SIZE-1:0] BRAM_A_douta_line;
-wire BRAM_A_wea_line;
-wire [Y_WIDTH-1:0] BRAM_A_addrb_line;
-wire [X_SIZE-1:0] BRAM_A_dinb_line;
-wire [X_SIZE-1:0] BRAM_A_doutb_line;
-wire BRAM_A_web_line;
-
-wire [Y_WIDTH-1:0] BRAM_B_addra_line;
-wire [X_SIZE-1:0] BRAM_B_dina_line;
-wire [X_SIZE-1:0] BRAM_B_douta_line;
-wire BRAM_B_wea_line;
-wire [Y_WIDTH-1:0] BRAM_B_addrb_line;
-wire [X_SIZE-1:0] BRAM_B_dinb_line;
-wire [X_SIZE-1:0] BRAM_B_doutb_line;
-wire BRAM_B_web_line;
-
-
 //BRAM WIRE
 wire [Y_WIDTH-1:0]  fetch_addr_line;
 wire [X_SIZE-1:0]  fetch_mem_line;
 
-wire [X_SIZE-1:0] video_out_row_data_line;
+
 
 line_buffer buffer(
     .clk(out_stream_aclk),
@@ -375,7 +353,7 @@ mode_selector selector(
     .parallel_next_state_result(parallel_next_state_result_line),
     .parallel_next_state_write_en(parallel_next_state_write_en_line),
     .video_out_row_addr(y),
-    .video_out_row_data(video_out_row_data_line),
+    .video_out_row_data(video_out_row),
 
 
     .BRAM_A_addra(BRAM_A_addra_line),
@@ -396,11 +374,14 @@ mode_selector selector(
     .BRAM_B_doutb(BRAM_B_doutb_line),
     .BRAM_B_web(BRAM_B_web_line));
 
+**/
+
 // -------------------------------------------------------
 // ---------------- OUTPUT LOGIC -------------------------
 // -------------------------------------------------------
 
 //BRAM register
+wire [X_SIZE-1:0]    video_out_row;
 reg [X_SIZE-1:0]    results_line;
 reg                 write;
 
@@ -421,7 +402,7 @@ reg  override;
 always @(posedge out_stream_aclk) begin
     write <= 1'b0;
 
-    if(periph_resetn) begin
+    if(periph_resetn && init_done) begin
         if(ready) begin
             if(lastx) begin
                 x <= {X_WIDTH{1'b0}};
@@ -442,8 +423,6 @@ always @(posedge out_stream_aclk) begin
 
 end
 
-assign y = y_out_address;
-
 wire valid_int = 1'b1;
 wire [4:0] current_reg;
 wire state;
@@ -451,21 +430,19 @@ wire state;
 wire [X_WIDTH-1:0] inverted_x;
 
 assign inverted_x = 11'd1279 - x;
-assign state = video_out_row_data_line[inverted_x];
+assign state = video_out_row[inverted_x];
+
+wire [7:0] r,g,b;
 
 wire [1279:0] dout_line_A;
 wire [1279:0] dout_line_B;
 
-wire [7:0] r, g, b;
-//DEAD - CB0000(DARK RED) ALIVE - CBFFFF(Very light Pale blue)
-assign r = 8'hCB;  
-assign g = state * 8'hFF;
-assign b = state * 8'hFF;
+assign r = state * 8'hCB;
+assign g = state * 8'h41;
+assign b = state * 8'h6B;
 
-//Used to be DEAD - 0000(Black) ALIVE - CB416B(Reddish pink) 
-// assign r = state * 8'hCB;   
-// assign g = state * 8'h41;
-// assign b = state * 8'h6B;
+wire [1279:0] BRAM_A_dinb_line;
+wire [1279:0] BRAM_A_douta_line;
 
 packer pixel_packer(    
                     .aclk(out_stream_aclk),
@@ -476,31 +453,18 @@ packer pixel_packer(
                     .out_stream_tlast(out_stream_tlast), .out_stream_tready(out_stream_tready),
                     .out_stream_tvalid(out_stream_tvalid), .out_stream_tuser(out_stream_tuser) );
 blk_mem_gen_0 blk_ram_A(
-                 .addra(BRAM_A_addra_line),
+                 .addra(init_write_address),
                  .clka(out_stream_aclk),
-                 .dina(BRAM_A_dina_line),
+                 .dina(result_line),
                  .douta(BRAM_A_douta_line),
                  .ena(1),
-                 .wea(BRAM_A_wea_line),
-                 .addrb(BRAM_A_addrb_line),
+                 .wea(write_enable),
+                 .addrb(y_out_address),
                  .clkb(out_stream_aclk),
                  .dinb(BRAM_A_dinb_line),
-                 .doutb(BRAM_A_doutb_line),
+                 .doutb(video_out_row),
                  .enb(1),
-                 .web(BRAM_A_web_line));                 
-blk_mem_gen_1 blk_ram_B(
-                 .addra(BRAM_B_addra_line),
-                 .clka(out_stream_aclk),
-                 .dina(BRAM_B_dina_line),
-                 .douta(BRAM_B_douta_line),
-                 .ena(1),
-                 .wea(BRAM_B_wea_line),
-                 .addrb(BRAM_B_addrb_line),
-                 .clkb(out_stream_aclk),
-                 .dinb(BRAM_B_dinb_line),
-                 .doutb(BRAM_B_doutb_line),
-                 .enb(1),
-                 .web(BRAM_B_web_line));
+                 .web(0));                 
 
 //all READ port 'a' for line buffer
 //all READ port 'b' for outstream video
