@@ -1,4 +1,6 @@
-module parallel_next_state(
+module parallel_next_state #(
+    parameter row_length = 1280;
+) (
     input wire clk,
     input wire [row_length-1:0] top_row,    // FROM line_buffer
     input wire [row_length-1:0] middle_row, // FROM line_buffer
@@ -12,9 +14,6 @@ module parallel_next_state(
     output [9:0] write_addr,    // To BRAM write
     output write_en             // TO BRAM write
 );
-
-    parameter row_length = 1280;
-
 
     wire [row_length+1:0] padded_top_row = {1'b0, top_row, 1'b0};
     wire [row_length+1:0] padded_middle_row = {1'b0, middle_row, 1'b0};
