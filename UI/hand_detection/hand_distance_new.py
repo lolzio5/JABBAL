@@ -24,7 +24,7 @@ client_socket, client_address = server_socket.accept()
 print(f"Connected to {client_address}")
 
 # Capture video from the default camera (usually the first one)
-cap = cv2.VideoCapture(1)
+cap = cv2.VideoCapture(0)
 
 # Initialize hand detector with a maximum of one hand to detect
 detector = HandDetector(maxHands=1)
@@ -146,6 +146,8 @@ while True:
                             matrix[min(int(alive[1]*1.5)-1,719)][min(int(alive[0]*2),1279)]=1
                             matrix[min(int(alive[1]*1.5)-1,719)][min(int(alive[0]*2)-1,1279)]=1
                             matrix[min(int(alive[1]*1.5)-1,719)][min(int(alive[0]*2)+1, 1279)]=1
+                            matrix[min(int(alive[1]*1.5),719)][min(int(alive[0]*2)+1, 1279)]=1
+                            matrix[min(int(alive[1]*1.5),719)][min(int(alive[0]*2)-1, 1279)]=1
                         try:
                             for row in matrix:
                                 serialized_row = pickle.dumps(row)
@@ -164,9 +166,13 @@ while True:
                 else:
                     if (is_hand_open(lmHand) and done_sending):
                         message="P" # Pause
-                        print(message)
                         pickled_message=pickle.dumps(message)
                         client_socket.send(pickled_message)
+                    else:
+                        message="N" # Pause
+                        pickled_message=pickle.dumps(message)
+                        client_socket.send(pickled_message)
+
 
         # Display the original image with hand detection
         cv2.imshow("Image", img)
