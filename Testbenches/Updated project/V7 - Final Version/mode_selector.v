@@ -7,9 +7,12 @@ module mode_selector #(
     input                   clk,
     input                   mode, //PAUSE FLAG
     
+    input                   ui,
+    input   [Y_WIDTH-1:0]   ui_data,
+
     input   [Y_WIDTH-1:0]   line_buffer_fetch_addr,
     output  [X_SIZE-1:0]    line_buffer_fetch_mem,
-    input   [Y_WIDTH-1:0]    parallel_next_state_write_addr,
+    input   [Y_WIDTH-1:0]   parallel_next_state_write_addr,
     input   [X_SIZE-1:0]    parallel_next_state_result,
     input                   parallel_next_state_write_en,
     input   [Y_WIDTH-1:0]   video_out_row_addr,
@@ -17,23 +20,23 @@ module mode_selector #(
 
     //ram A
     output  [Y_WIDTH-1:0]   BRAM_A_addra,
-    output  [X_SIZE-1:0]   BRAM_A_dina,
+    output  [X_SIZE-1:0]    BRAM_A_dina,
     input   [X_SIZE-1:0]    BRAM_A_douta,
     output                  BRAM_A_wea,
     output  [Y_WIDTH-1:0]   BRAM_A_addrb,
-    output  [X_SIZE-1:0]    BRAM_A_dinb,
+    // output  [X_SIZE-1:0]    BRAM_A_dinb,
     input   [X_SIZE-1:0]    BRAM_A_doutb,
-    output                  BRAM_A_web,
+    // output                  BRAM_A_web,
 
     //ram B
     output  [Y_WIDTH-1:0]   BRAM_B_addra,
-    output  [X_SIZE-1:0]   BRAM_B_dina,
+    output  [X_SIZE-1:0]    BRAM_B_dina,
     input   [X_SIZE-1:0]    BRAM_B_douta,
     output                  BRAM_B_wea,
     output  [Y_WIDTH-1:0]   BRAM_B_addrb,
-    output  [X_SIZE-1:0]    BRAM_B_dinb,
+    // output  [X_SIZE-1:0]    BRAM_B_dinb,
     input   [X_SIZE-1:0]    BRAM_B_doutb,
-    output                  BRAM_B_web
+    // output                  BRAM_B_web
 );
 
 //all READ port 'a' for line buffer
@@ -56,8 +59,8 @@ module mode_selector #(
 //mode 0: RAM_A read, RAM_B write
 
 assign  BRAM_A_addra = mode ? line_buffer_fetch_addr : parallel_next_state_write_addr;
-assign  BRAM_A_addrb = video_out_row_addr;
-assign  BRAM_B_addrb = video_out_row_addr;
+assign  BRAM_A_addrb = ui ? ui_data : video_out_row_addr;
+assign  BRAM_B_addrb = ui ? ui_data : video_out_row_addr;
 assign  line_buffer_fetch_mem = mode ? BRAM_A_douta : BRAM_B_douta;
 assign  video_out_row_data = mode ? BRAM_A_doutb : BRAM_B_doutb;
 assign  BRAM_B_addra = mode ? parallel_next_state_write_addr : line_buffer_fetch_addr;
@@ -65,10 +68,10 @@ assign  BRAM_B_dina = parallel_next_state_result;
 assign  BRAM_A_dina = parallel_next_state_result;
 assign  BRAM_B_wea = mode ? 1 : 0;   // assign  BRAM_B_wea = mode ? parallel_next_state_write_en : 0;
 assign  BRAM_A_wea = mode ? 0 : 1;   // assign  BRAM_A_wea = mode ? 0 : parallel_next_state_write_en;
-assign  BRAM_A_web = 1'b0;
-assign  BRAM_B_web = 1'b0;
-assign BRAM_A_dinb = 1280'b0;
-assign  BRAM_B_dinb  = 1280'b0;
+// assign  BRAM_A_web = 1'b0;
+// assign  BRAM_B_web = 1'b0;
+// assign BRAM_A_dinb = 1280'b0;
+// assign  BRAM_B_dinb  = 1280'b0;
 
 
 

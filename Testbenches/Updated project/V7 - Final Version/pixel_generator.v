@@ -228,7 +228,7 @@ wire [X_SIZE-1:0] BRAM_A_dina_line;
 wire [X_SIZE-1:0] BRAM_A_douta_line;
 wire BRAM_A_wea_line;
 reg [Y_WIDTH-1:0] BRAM_A_addrb_line;
-reg [X_SIZE-1:0] BRAM_A_dinb_line;
+reg [X_SIZE-1:0] UI_W_dinb_line;
 wire [X_SIZE-1:0] BRAM_A_doutb_line;
 reg BRAM_A_web_line;
 
@@ -241,6 +241,9 @@ reg [X_SIZE-1:0] BRAM_B_dinb_line;
 wire [X_SIZE-1:0] BRAM_B_doutb_line;
 reg BRAM_B_web_line;
 
+reg ui_reg;
+reg [Y_WIDTH-1:0] BRAM_ui_w_addrb_line;
+
 python_clk python_clk(
     .clk(out_stream_aclk),
     .mode(mode_line),
@@ -251,8 +254,9 @@ always @(posedge out_stream_aclk) begin
     if (regfile[40][0]==1) begin
         BRAM_A_web_line<=1'b1;
         BRAM_B_web_line<=1'b1;
+        ui_reg<=1'b1;
         // Concatenates the whole line from the 40 registers, each 32bits
-        BRAM_B_dinb_line <= {regfile[0], regfile[1], regfile[2], regfile[3], 
+        UI_W_dinb_line <= {regfile[0], regfile[1], regfile[2], regfile[3], // 
                         regfile[4], regfile[5], regfile[6], regfile[7], 
                         regfile[8], regfile[9], regfile[10], regfile[11], 
                         regfile[12], regfile[13], regfile[14], regfile[15], 
@@ -262,21 +266,22 @@ always @(posedge out_stream_aclk) begin
                         regfile[28], regfile[29], regfile[30], regfile[31], 
                         regfile[32], regfile[33], regfile[34], regfile[35], 
                         regfile[36], regfile[37], regfile[38], regfile[39]};
-        BRAM_B_addrb_line <= regfile[42][Y_WIDTH-1:0];
-        BRAM_A_dinb_line <= {regfile[0], regfile[1], regfile[2], regfile[3], 
-                        regfile[4], regfile[5], regfile[6], regfile[7], 
-                        regfile[8], regfile[9], regfile[10], regfile[11], 
-                        regfile[12], regfile[13], regfile[14], regfile[15], 
-                        regfile[16], regfile[17], regfile[18], regfile[19], 
-                        regfile[20], regfile[21], regfile[22], regfile[23], 
-                        regfile[24], regfile[25], regfile[26], regfile[27], 
-                        regfile[28], regfile[29], regfile[30], regfile[31], 
-                        regfile[32], regfile[33], regfile[34], regfile[35], 
-                        regfile[36], regfile[37], regfile[38], regfile[39]};
-        BRAM_A_addrb_line <= regfile[42][Y_WIDTH-1:0];
-        if (BRAM_A_addrb_line == Y_SIZE-1) begin
+        BRAM_ui_w_addrb_line <= regfile[42][Y_WIDTH-1:0];
+        // BRAM_B_dinb_line <= {regfile[0], regfile[1], regfile[2], regfile[3], //
+        //                 regfile[4], regfile[5], regfile[6], regfile[7], 
+        //                 regfile[8], regfile[9], regfile[10], regfile[11], 
+        //                 regfile[12], regfile[13], regfile[14], regfile[15], 
+        //                 regfile[16], regfile[17], regfile[18], regfile[19], 
+        //                 regfile[20], regfile[21], regfile[22], regfile[23], 
+        //                 regfile[24], regfile[25], regfile[26], regfile[27], 
+        //                 regfile[28], regfile[29], regfile[30], regfile[31], 
+        //                 regfile[32], regfile[33], regfile[34], regfile[35], 
+        //                 regfile[36], regfile[37], regfile[38], regfile[39]};
+        //BRAM_A_addrb_line <= regfile[42][Y_WIDTH-1:0];
+        if (BRAM_ui_w_addrb_line == Y_SIZE-1) begin
             BRAM_A_web_line<=1'b0;
             BRAM_B_web_line<=1'b0;
+            ui_reg<=1'b0;
         end
     end
 end
@@ -354,6 +359,8 @@ parallel_next_state next_state(
 mode_selector selector(
     .clk(out_stream_aclk),
     .mode(mode_line), //PAUSE FLAG
+    .ui(ui_reg),
+    .ui_data(BRAM_ui_w_addrb_line),
 
     .line_buffer_fetch_addr(fetch_addr_line),
     .line_buffer_fetch_mem(fetch_mem_line),
@@ -369,18 +376,18 @@ mode_selector selector(
     .BRAM_A_douta(BRAM_A_douta_line),
     .BRAM_A_wea(BRAM_A_wea_line),
     .BRAM_A_addrb(BRAM_A_addrb_line),
-    .BRAM_A_dinb(BRAM_A_dinb_line),
+    //.BRAM_A_dinb(UI_W_dinb_line),
     .BRAM_A_doutb(BRAM_A_doutb_line),
-    .BRAM_A_web(BRAM_A_web_line),
+    //.BRAM_A_web(BRAM_A_web_line_dummy),
 
     .BRAM_B_addra(BRAM_B_addra_line),
     .BRAM_B_dina(BRAM_B_dina_line),
     .BRAM_B_douta(BRAM_B_douta_line),
     .BRAM_B_wea(BRAM_B_wea_line),
     .BRAM_B_addrb(BRAM_B_addrb_line),
-    .BRAM_B_dinb(BRAM_B_dinb_line),
+    //.BRAM_B_dinb(BRAM_B_dinb_line),
     .BRAM_B_doutb(BRAM_B_doutb_line),
-    .BRAM_B_web(BRAM_B_web_line));
+    //.BRAM_B_web(BRAM_B_web_line_dummy));
 
 // -------------------------------------------------------
 // ---------------- OUTPUT LOGIC -------------------------
@@ -468,7 +475,7 @@ blk_mem_gen_0 blk_ram_A(
                  .wea(BRAM_A_wea_line),
                  .addrb(BRAM_A_addrb_line),
                  .clkb(out_stream_aclk),
-                 .dinb(BRAM_A_dinb_line),
+                 .dinb(UI_W_dinb_line),
                  .doutb(BRAM_A_doutb_line),
                  .enb(1),
                  .web(BRAM_A_web_line));                 
@@ -481,7 +488,7 @@ blk_mem_gen_1 blk_ram_B(
                  .wea(BRAM_B_wea_line),
                  .addrb(BRAM_B_addrb_line),
                  .clkb(out_stream_aclk),
-                 .dinb(BRAM_B_dinb_line),
+                 .dinb(UI_W_dinb_line),
                  .doutb(BRAM_B_doutb_line),
                  .enb(1),
                  .web(BRAM_B_web_line));
