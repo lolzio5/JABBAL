@@ -187,7 +187,7 @@ while True:
                             [8, 13]
                         ]
                         for x, y in alive_cells:
-                            matrix[y+10][x+10]=1
+                            matrix[y+100][x+100]=1
                         try:
                             for row in matrix:
                                 serialized_row = pickle.dumps(row)
