@@ -138,6 +138,7 @@ while True:
                 if is_thumbs_up(lmHand) and exec_time>10:
                     drawing = False
                     if not done_sending:
+                        '''
                         for alive in coordinates:
                             matrix[min(int(alive[1]*1.5),719)][min(int(alive[0]*2),1279)]=1
                             matrix[min(int(alive[1]*1.5)+1,719)][min(int(alive[0]*2), 1279)]=1
@@ -146,6 +147,47 @@ while True:
                             matrix[min(int(alive[1]*1.5)-1,719)][min(int(alive[0]*2),1279)]=1
                             matrix[min(int(alive[1]*1.5)-1,719)][min(int(alive[0]*2)-1,1279)]=1
                             matrix[min(int(alive[1]*1.5)-1,719)][min(int(alive[0]*2)+1, 1279)]=1
+                            '''
+                        alive_cells = [
+                            [0, 24],
+                            [1, 22],
+                            [1, 24],
+                            [2, 12],
+                            [2, 13],
+                            [2, 20],
+                            [2, 21],
+                            [2, 34],
+                            [2, 35],
+                            [3, 11],
+                            [3, 15],
+                            [3, 20],
+                            [3, 21],
+                            [3, 34],
+                            [3, 35],
+                            [4, 0],
+                            [4, 1],
+                            [4, 10],
+                            [4, 16],
+                            [4, 20],
+                            [4, 21],
+                            [5, 0],
+                            [5, 1],
+                            [5, 10],
+                            [5, 14],
+                            [5, 16],
+                            [5, 17],
+                            [5, 22],
+                            [5, 24],
+                            [6, 10],
+                            [6, 16],
+                            [6, 24],
+                            [7, 11],
+                            [7, 15],
+                            [8, 12],
+                            [8, 13]
+                        ]
+                        for x, y in alive_cells:
+                            matrix[y][x]=1
                         try:
                             for row in matrix:
                                 serialized_row = pickle.dumps(row)
