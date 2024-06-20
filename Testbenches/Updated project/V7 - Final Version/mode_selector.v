@@ -35,7 +35,7 @@ module mode_selector #(
     output                  BRAM_B_wea,
     output  [Y_WIDTH-1:0]   BRAM_B_addrb,
     // output  [X_SIZE-1:0]    BRAM_B_dinb,
-    input   [X_SIZE-1:0]    BRAM_B_doutb,
+    input   [X_SIZE-1:0]    BRAM_B_doutb
     // output                  BRAM_B_web
 );
 

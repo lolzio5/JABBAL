@@ -215,7 +215,6 @@ wire [X_SIZE-1:0]  top;
 wire [X_SIZE-1:0]  middle;
 wire [X_SIZE-1:0]  bottom;
 wire                calc_flag_1;
-assign calc_flag_1 = calc_flag;
 wire                calc_flag_2;
 wire [Y_WIDTH-1:0]  calc_row_2;
 
@@ -297,6 +296,7 @@ assign calc_row_out = calc_row_reg;
 
 reg temp_mode = 0;
 reg calc_flag = 0;
+assign calc_flag_1 = calc_flag;
 
 always @(posedge out_stream_aclk) begin
     if (temp_mode != mode_line) begin
@@ -386,8 +386,9 @@ mode_selector selector(
     .BRAM_B_wea(BRAM_B_wea_line),
     .BRAM_B_addrb(BRAM_B_addrb_line),
     //.BRAM_B_dinb(BRAM_B_dinb_line),
-    .BRAM_B_doutb(BRAM_B_doutb_line),
-    //.BRAM_B_web(BRAM_B_web_line_dummy));
+    .BRAM_B_doutb(BRAM_B_doutb_line)
+    //.BRAM_B_web(BRAM_B_web_line_dummy)
+    );
 
 // -------------------------------------------------------
 // ---------------- OUTPUT LOGIC -------------------------
