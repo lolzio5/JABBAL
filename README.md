@@ -13,7 +13,7 @@ To run the system, a laptop with an installed Python interpreter, a PYNQ-Z1 boar
 3. Copy [PYNQ_Notebook_Final.ipynb](https://github.com/lolzio5/JABBAL/blob/main/Notebooks/PYNQ_Notebook_Final.ipynb) to the home directory /user/xilinx on the PYNQ and open it.
 4. In a Python Environment, run the command
    ```shell
-   pip install requirements.txt
+   pip install -r requirements.txt
    ```
 6. Once all packages are installed, run the [hand_distance_new.py](https://github.com/lolzio5/JABBAL/blob/main/UI/hand_detection/hand_distance_new.py) file in a Python environment
 7. When the following message appears in the Python terminal, execute all the cells in the Jupyter Notebook, except the last one (that sets the speedup)
